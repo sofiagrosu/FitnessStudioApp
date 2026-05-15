@@ -5,12 +5,21 @@ private Long id;
 private Long courseId;
 private Long SignUpId;
 private Integer position;
-public WaitlistEntry(Long id, Long courseId, Long signUpId, Integer position) {
+public WaitlistEntry(Long id,Long signUpId,  Long courseId, Integer position) {
     this.id = id;
     this.courseId = courseId;
     SignUpId = signUpId;
     this.position = position;
 
+}
+//to string : get all informations (except id) in a string
+@Override
+public String toString() {
+    return "WaitlistEntry{" +
+            "courseId=" + courseId +
+            ", SignUpId=" + SignUpId +
+            ", position=" + position +
+            '}';
 }
 public Long getCourseId() {
     return courseId;

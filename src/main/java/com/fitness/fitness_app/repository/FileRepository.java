@@ -9,6 +9,7 @@ public interface FileRepository<T> {
  void add(T item);
  void update(T item);
  void delete(Long id);
-
+ public T findById(Long id);
+ public List<String> getAllInformation();
 
 }

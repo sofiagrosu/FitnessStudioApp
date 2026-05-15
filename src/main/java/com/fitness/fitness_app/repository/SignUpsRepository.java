@@ -94,6 +94,29 @@ public class SignUpsRepository implements FileRepository<SignUp> {
         SaveAll(signUps);
     }
 
+    // getAllInformation
+    public List<String> getAllInformation() {
+        List<String> infoList = new ArrayList<>();
+
+        for (SignUp signUp : signUps) {
+            infoList.add(signUp.toString());
+        }
+
+        return infoList;
+    }
+ //find by id
+    public SignUp findById(Long id) {
+        return signUps.stream()
+                .filter(signUp -> signUp.getId().equals(id))
+                .findFirst()
+                .orElse(null);
+    }
+public Long getNextId() {
+    return signUps.stream()
+            .map(SignUp::getId)
+            .max(Long::compareTo)
+            .orElse(0L) + 1;
+}
     // Filters
 
     public List<SignUp> findByCourseId(Long courseId) {

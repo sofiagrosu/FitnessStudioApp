@@ -35,6 +35,21 @@ public class Course {
         this.locationId = locationId;
     }
 
+    @Override
+    public String toString() {
+        return "Course{" +
+                "trainerId=" + trainerId +
+                ", name='" + name + '\'' +
+                ", type=" + type +
+                ", dayOfWeek=" + dayOfWeek +
+                ", startTime=" + startTime +
+                ", duration=" + duration +
+                ", maxCapacity=" + maxCapacity +
+                ", recurring=" + recurring +
+                ", currentOccupancy=" + currentOccupancy +
+                ", locationId=" + locationId +
+                '}';
+    }
 public Long getLocationId() {
         return locationId;
     }

@@ -13,6 +13,16 @@ public class Location {
         this.address = address;
         this.capacity = capacity;
     }
+    //to string : get all informations (except id) in a string
+    @Override
+    public String toString() {
+        return "Location{" +
+                "name='" + name + '\'' +
+                ", address='" + address + '\'' +
+                ", capacity=" + capacity +
+                ", currentOccupancy=" + currentOccupancy +
+                '}';
+    }
 
     public Integer getCurrentOccupancy() {
         return currentOccupancy;

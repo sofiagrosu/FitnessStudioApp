@@ -12,10 +12,20 @@ public class SignUp {
         this.courseId = courseId;
         this.memberId = memberId;
         this.bookingTime = bookingTime;
+        
         this.attended = attended;
     }
 
-
+//to string : get all informations (except id) in a string
+    @Override   
+    public String toString() {
+        return "SignUp{" +
+                "courseId=" + courseId +
+                ", memberId=" + memberId +
+                ", bookingTime=" + bookingTime +
+                ", attended=" + attended +
+                '}';
+    }
 
     public Long getId() {
         return id;

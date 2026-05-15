@@ -121,6 +121,13 @@ public class LocationsRepository implements FileRepository<Location> {
                 .toList();
     }
 
+    @Override
+    public List<String> getAllInformation() {
+        return locations.stream()
+                .map(Location::toString)
+                .toList();
+    }
+
     public List<Location> searchByName(String keyword) {
 
         return locations.stream()

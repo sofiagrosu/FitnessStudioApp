@@ -24,6 +24,19 @@ public class WaitlistsRepository implements FileRepository<WaitlistEntry> {
         this.entries = loadFromFile();
     }
 
+    public Long getNextId() {
+    return entries.stream()
+            .map(WaitlistEntry::getId)
+            .max(Long::compareTo)
+            .orElse(0L) + 1;
+}
+ //find by id
+        public WaitlistEntry findById(Long id) {
+            return entries.stream()
+                    .filter(entry -> entry.getId().equals(id))
+                    .findFirst()
+                    .orElse(null);
+        }
     private List<WaitlistEntry> loadFromFile() {
         File file = new File(filePath);
 
@@ -64,6 +77,7 @@ public class WaitlistsRepository implements FileRepository<WaitlistEntry> {
 
     @Override
     public void add(WaitlistEntry item) {
+        item.setId(getNextId());
         long entriesForCourse = entries.stream()
                 .filter(entry -> entry.getCourseId().equals(item.getCourseId()))
                 .count();

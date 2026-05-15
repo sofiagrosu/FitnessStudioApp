@@ -45,6 +45,7 @@ public class CoursesRepository implements FileRepository<Course> {
         }
     }
 
+    
     @Override
     public List<Course> getAll() {
         return new ArrayList<>(courses);
@@ -66,8 +67,16 @@ public class CoursesRepository implements FileRepository<Course> {
 
     @Override
     public void add(Course item) {
+        item.setId(getNextId());
         courses.add(item);
         SaveAll(courses);
+    }
+
+    public Long getNextId() {
+        return courses.stream()
+                .map(Course::getId)
+                .max(Long::compareTo)
+                .orElse(0L) + 1;
     }
 
     @Override
@@ -95,6 +104,7 @@ public class CoursesRepository implements FileRepository<Course> {
 
         SaveAll(courses);
     }
+    
 
     // Filters
 
@@ -209,6 +219,15 @@ public class CoursesRepository implements FileRepository<Course> {
                         Comparator.comparing(Course::getLocationId)
                                 .thenComparing(Course::getName)
                 )
+                .toList();
+    }
+
+   
+    //get all information override interface method
+    @Override
+    public List<String> getAllInformation() {
+        return courses.stream()
+                .map(Course::toString)
                 .toList();
     }
 }
