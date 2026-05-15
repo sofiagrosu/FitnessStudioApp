@@ -296,6 +296,14 @@ public List<Course> getCoursesByTrainerAndLocation(Long trainerId, Long location
                 .distinct()
                 .toList();
     }
+
+    // numara prezentele acumulate de un membru
+    public long countAccumulatedAttendanceForMember(Long memberId) {
+        return signUpsRepository.getAll()
+                .stream()
+                .filter(s -> memberId != null && s.getMemberId() == memberId && Boolean.TRUE.equals(s.getAttended()))
+                .count();
+    }
 public List<Course> getAvailableCoursesByLocation(Long locationId) {
     return coursesRepository.findByLocationId(locationId)
             .stream()
