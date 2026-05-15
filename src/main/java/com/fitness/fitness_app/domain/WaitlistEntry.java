@@ -2,13 +2,22 @@ package com.fitness.fitness_app.domain;
 
 public class WaitlistEntry {
 private Long id;
+private Long courseId;
 private Long SignUpId;
 private Integer position;
-public WaitlistEntry(Long id, Long signUpId, Integer position) {
+public WaitlistEntry(Long id, Long courseId, Long signUpId, Integer position) {
     this.id = id;
+    this.courseId = courseId;
     SignUpId = signUpId;
     this.position = position;
 
+}
+public Long getCourseId() {
+    return courseId;
+}
+
+public void setCourseId(Long courseId) {
+    this.courseId = courseId;
 }
 public Long getId() {
     return id;

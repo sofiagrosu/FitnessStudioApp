@@ -1,5 +1,5 @@
 package com.fitness.fitness_app.domain;
-import java.time.DayOfWeek;
+
 import java.time.LocalTime;
 
 public class Course {
@@ -50,7 +50,7 @@ public Long getLocationId() {
     public void setCurrentOccupancy(Integer currentOccupancy) {
         this.currentOccupancy = currentOccupancy;
     }
-    
+
     public Long getId() {
         return id;
     }
