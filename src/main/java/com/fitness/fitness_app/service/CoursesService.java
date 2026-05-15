@@ -7,6 +7,7 @@ import com.fitness.fitness_app.repository.WaitlistsRepository;
 
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import com.fitness.fitness_app.domain.SignUp;
@@ -332,5 +333,8 @@ public List<Course> getCoursesSortedByDayAndStartTime() {
 
 public List<Course> getCoursesSortedByLocationAndName() {
     return coursesRepository.sortByLocationAndName();
+}
+public List<Course> getCoursesByLocation(Long locationId) {
+    return coursesRepository.findByLocationId(locationId);
 }
 }
