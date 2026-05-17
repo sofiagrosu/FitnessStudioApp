@@ -4,26 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="2bcf9f0c-7538-4638-bc23-eb96a2ec1c05" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/controller/CoursesController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/Course.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/CourseType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/DayOfWeek.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/Location.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/Role.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/SignUp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/UserI.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/WaitlistEntry.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/CoursesRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/FileRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/LocationsRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/SignUpsRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/UserRepositoryI.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/WaitlistsRepository.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/service/CoursesService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fitness-app/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-app/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/fitness-app/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-app/src/main/resources/application.properties" afterDir="false" />
-    </list>
+    <list default="true" id="2bcf9f0c-7538-4638-bc23-eb96a2ec1c05" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -64,7 +45,7 @@
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "Merging Member__Subscription__CheckIn",
+    "git-widget-placeholder": "Member__Subscription__CheckIn",
     "ignore.virus.scanning.warn.message": "true",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
@@ -117,6 +98,15 @@
       <workItem from="1778931775825" duration="60000" />
       <workItem from="1778931843029" duration="976000" />
     </task>
+    <task id="LOCAL-00001">
+      <option name="closed" value="true" />
+      <created>1779024868964</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1779024868964</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
