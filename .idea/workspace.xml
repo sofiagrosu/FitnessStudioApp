@@ -5,23 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="2bcf9f0c-7538-4638-bc23-eb96a2ec1c05" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/fitness-app/src/main/java/com/fitness/fitness_app/model/Admin.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fitness-app/src/main/java/com/fitness/fitness_app/model/Location.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fitness-app/src/main/java/com/fitness/fitness_app/model/Receptionist.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fitness-app/src/main/java/com/fitness/fitness_app/model/Trainer.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fitness-app/src/main/java/com/fitness/fitness_app/model/UserI.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fitness-app/src/main/java/com/fitness/fitness_app/model/Zone.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fitness-app/src/main/java/com/fitness/fitness_app/model/enums/Role.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/FitnessAppApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/fitness/fitness_app/FitnessAppApplicationTests.java" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/controller/CoursesController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/Course.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/CourseType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/DayOfWeek.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/Location.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/Role.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/SignUp.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/UserI.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/domain/WaitlistEntry.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/CoursesRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/FileRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/LocationsRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/SignUpsRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/UserRepositoryI.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/repository/WaitlistsRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/fitness/fitness_app/service/CoursesService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-app/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-app/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-app/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-app/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,25 +59,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "Merging Member__Subscription__CheckIn",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "preferences.keymap",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration default="true" type="JetRunConfigurationType">
       <module name="Programare web" />
@@ -100,6 +101,9 @@
         <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.26830.84" />
       </set>
     </attachedChunks>
+  </component>
+  <component name="StructureViewState">
+    <option name="selectedTab" value="Logical" />
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
