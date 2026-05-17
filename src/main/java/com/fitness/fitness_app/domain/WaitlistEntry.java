@@ -3,12 +3,12 @@ package com.fitness.fitness_app.domain;
 public class WaitlistEntry {
 private Long id;
 private Long courseId;
-private Long SignUpId;
+private Long signUpId;
 private Integer position;
 public WaitlistEntry(Long id,Long signUpId,  Long courseId, Integer position) {
     this.id = id;
     this.courseId = courseId;
-    SignUpId = signUpId;
+    this.signUpId = signUpId;
     this.position = position;
 
 }
@@ -17,7 +17,7 @@ public WaitlistEntry(Long id,Long signUpId,  Long courseId, Integer position) {
 public String toString() {
     return "WaitlistEntry{" +
             "courseId=" + courseId +
-            ", SignUpId=" + SignUpId +
+            ", signUpId=" + signUpId +
             ", position=" + position +
             '}';
 }
@@ -35,10 +35,10 @@ public void setId(Long id) {
     this.id = id;
 }
 public Long getSignUpId() {
-    return SignUpId;
+    return signUpId;
 }
 public void setSignUpId(Long signUpId) {
-    SignUpId = signUpId;
+    this.signUpId = signUpId;
 }
 public Integer getPosition() {
     return position;

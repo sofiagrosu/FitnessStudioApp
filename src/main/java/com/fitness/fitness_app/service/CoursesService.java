@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import com.fitness.fitness_app.domain.SignUp;
 import com.fitness.fitness_app.domain.WaitlistEntry;
 import java.util.Comparator;
-
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 
@@ -144,7 +144,7 @@ public String createSignUp(Long memberId, Long courseId) {
                 null,
                 courseId,
                 memberId,
-                LocalTime.now(),
+                LocalDateTime.now(),
                 false
         );
 
@@ -169,7 +169,7 @@ public String createSignUp(Long memberId, Long courseId) {
             null,
             courseId,
             memberId,
-            LocalTime.now(),
+            LocalDateTime.now(),
             false
     );
 
@@ -253,7 +253,7 @@ public String deleteCourse(Long courseId) {
             .forEach(entry -> waitlistsRepository.delete(entry.getId()));
 
     signUpsRepository.getAll().stream()
-            .filter(signUp -> signUp.getCourseId().equals(courseId))
+            .filter(signUp -> signUp.getCourseId() == courseId)
             .forEach(signUp -> signUpsRepository.delete(signUp.getId()));
 
     coursesRepository.delete(courseId);

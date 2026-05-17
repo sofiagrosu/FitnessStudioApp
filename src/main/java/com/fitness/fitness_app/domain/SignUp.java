@@ -1,13 +1,16 @@
 package com.fitness.fitness_app.domain;
 import java.time.LocalTime;
+ import java.time.LocalDateTime;
+
 public class SignUp {
     private Long id;
     private long courseId;
     private long memberId;
-    private LocalTime bookingTime;
+  
+private LocalDateTime bookingTime;
     private Boolean attended; // New field to track attendance
 
-    public SignUp(Long id, long courseId, long memberId, LocalTime bookingTime, Boolean attended) {
+    public SignUp(Long id, long courseId, long memberId, LocalDateTime bookingTime, Boolean attended) {
         this.id = id;
         this.courseId = courseId;
         this.memberId = memberId;
@@ -51,11 +54,11 @@ public class SignUp {
         this.memberId = memberId;
     }
 
-    public LocalTime getBookingTime() {
+    public LocalDateTime getBookingTime() {
         return bookingTime;
     }
 
-    public void setBookingTime(LocalTime bookingTime) {
+    public void setBookingTime(LocalDateTime bookingTime) {
         this.bookingTime = bookingTime;
 
     }

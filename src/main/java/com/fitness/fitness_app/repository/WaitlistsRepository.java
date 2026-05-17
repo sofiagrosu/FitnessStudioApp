@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
+
+@Repository
 public class WaitlistsRepository implements FileRepository<WaitlistEntry> {
 
     private final String filePath;
@@ -18,7 +22,7 @@ public class WaitlistsRepository implements FileRepository<WaitlistEntry> {
 
     private static final int MAX_WAITLIST_SIZE_PER_COURSE = 5;
 
-    public WaitlistsRepository(String filePath) {
+    public WaitlistsRepository(@Value("${data.waitlist.path}") String filePath) {
         this.filePath = filePath;
         this.objectMapper = new ObjectMapper();
         this.entries = loadFromFile();
@@ -181,5 +185,12 @@ public class WaitlistsRepository implements FileRepository<WaitlistEntry> {
         for (int i = 0; i < courseEntries.size(); i++) {
             courseEntries.get(i).setPosition(i + 1);
         }
+    }
+
+    @Override
+    public List<String> getAllInformation() {
+        return entries.stream()
+                .map(WaitlistEntry::toString)
+                .toList();
     }
 }

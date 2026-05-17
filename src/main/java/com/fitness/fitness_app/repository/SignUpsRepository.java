@@ -11,13 +11,17 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
+
+@Repository
 public class SignUpsRepository implements FileRepository<SignUp> {
 
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<SignUp> signUps;
 
-    public SignUpsRepository(String filePath) {
+    public SignUpsRepository(@Value("${data.signups.path}")     String filePath) {
         this.filePath = filePath;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());

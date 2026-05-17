@@ -10,13 +10,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
+
+
+@Repository
 public class LocationsRepository implements FileRepository<Location> {
 
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<Location> locations;
 
-    public LocationsRepository(String filePath) {
+    public LocationsRepository(@Value("${data.locations.path}") String filePath) {
         this.filePath = filePath;
         this.objectMapper = new ObjectMapper();
         this.locations = loadFromFile();

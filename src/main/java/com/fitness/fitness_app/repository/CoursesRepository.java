@@ -13,13 +13,18 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Repository;
+
+
+@Repository
 public class CoursesRepository implements FileRepository<Course> {
 
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<Course> courses;
 
-    public CoursesRepository(String filePath) {
+    public CoursesRepository(@Value("${data.courses.path}") String filePath) {
         this.filePath = filePath;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
@@ -224,7 +229,6 @@ public class CoursesRepository implements FileRepository<Course> {
 
    
     //get all information override interface method
-    @Override
     public List<String> getAllInformation() {
         return courses.stream()
                 .map(Course::toString)
