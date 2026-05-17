@@ -25,4 +25,4 @@ public interface UserI extends Serializable {
     String getEmail();
     String getPassword();
     void setActive(boolean active);
-}
+}//
