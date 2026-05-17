@@ -1,1 +1,9 @@
-[]
+[ {
+  "id" : 1,
+  "firstName" : "Ana",
+  "lastName" : "Popescu",
+  "email" : "ana.popescu@test.com",
+  "phone" : "0733333333",
+  "qrCode" : "MEM-CC71028D",
+  "active" : true
+} ]

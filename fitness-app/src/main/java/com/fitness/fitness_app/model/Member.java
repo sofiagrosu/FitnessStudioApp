@@ -1,5 +1,7 @@
 package com.fitness.fitness_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public class Member {
     private Long id;
     private String firstName;
@@ -34,6 +36,7 @@ public class Member {
                 '}';
     }
 
+    @JsonIgnore
     public String getFullName() {
         return (firstName == null ? "" : firstName) + " " + (lastName == null ? "" : lastName);
     }
