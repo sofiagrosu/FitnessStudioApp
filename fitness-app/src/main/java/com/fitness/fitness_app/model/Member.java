@@ -8,7 +8,7 @@ import com.fitness.fitness_app.model.enums.Role;
 public class Member implements UserI {
     private static final long serialVersionUID = 1L;
 
-    private long id;
+    private Long id;
     private String firstName;
     private String lastName;
     private String email;
@@ -23,7 +23,7 @@ public class Member implements UserI {
         this.role = Role.MEMBER;
     }
 
-    public Member(long id, String firstName, String lastName, String email, String phone) {
+    public Member(Long id, String firstName, String lastName, String email, String phone) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -60,8 +60,8 @@ public class Member implements UserI {
         return "Member: " + getName() + " (" + email + ")";
     }
 
-    @Override public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    @Override public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     @Override public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }

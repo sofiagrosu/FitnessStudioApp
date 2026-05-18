@@ -7,6 +7,7 @@ import com.fitness.fitness_app.model.Subscription;
 import com.fitness.fitness_app.model.enums.SubscriptionStatus;
 import com.fitness.fitness_app.model.enums.SubscriptionType;
 import com.fitness.fitness_app.repository.SubscriptionsRepository;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -15,9 +16,12 @@ import java.util.List;
 @Service
 public class SubscriptionService {
     private final SubscriptionsRepository subscriptionsRepository;
+    private final MemberService memberService;
 
-    public SubscriptionService(SubscriptionsRepository subscriptionsRepository) {
+    public SubscriptionService(SubscriptionsRepository subscriptionsRepository,
+                               @Lazy MemberService memberService) {
         this.subscriptionsRepository = subscriptionsRepository;
+        this.memberService = memberService;
     }
 
     public Subscription createSubscription(Long memberId, SubscriptionType type, Double price) {
@@ -48,6 +52,7 @@ public class SubscriptionService {
         }
 
         subscription.setStartDate(LocalDate.now());
+        subscription.setPaid(false); // reinnoire = trebuie platita din nou
         applySubscriptionRules(subscription);
         return subscriptionsRepository.save(subscription);
     }
@@ -64,6 +69,7 @@ public class SubscriptionService {
     public boolean hasValidAccess(Long memberId) {
         Subscription subscription = getActiveSubscriptionForMember(memberId);
         if (subscription == null) return false;
+        if (!subscription.isPaid()) return false;
         refreshStatus(subscription);
         if (subscription.getStatus() != SubscriptionStatus.ACTIVE) return false;
         if (subscription.getType() == SubscriptionType.TEN_ENTRIES) {
@@ -95,7 +101,14 @@ public class SubscriptionService {
 
     public List<Subscription> getSubscriptionsForMember(Long memberId) {
         if (memberId == null) throw new ValidationException("Member id is required");
+        memberService.getMemberById(memberId); // throws NotFoundException if member doesn't exist
         return subscriptionsRepository.findByMemberId(memberId);
+    }
+
+    public void markAsPaid(Long subscriptionId) {
+        Subscription subscription = getSubscriptionById(subscriptionId);
+        subscription.setPaid(true);
+        subscriptionsRepository.save(subscription);
     }
 
     public Subscription getSubscriptionById(Long subscriptionId) {
@@ -107,6 +120,7 @@ public class SubscriptionService {
 
     private void validateSubscriptionInput(Long memberId, SubscriptionType type, Double price) {
         if (memberId == null) throw new ValidationException("Member id is required");
+        memberService.getMemberById(memberId); // throws NotFoundException if member doesn't exist
         if (type == null) throw new ValidationException("Subscription type is required");
         if (price == null || price <= 0) throw new ValidationException("Price must be greater than 0");
     }

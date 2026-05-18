@@ -44,14 +44,14 @@ public class MembersRepository implements BaseRepository<Member> {
     }
 
     private long getNextId() {
-        return members.stream().mapToLong(Member::getId).max().orElse(0L) + 1;
+        return members.stream().mapToLong(m -> m.getId() == null ? 0L : m.getId()).max().orElse(0L) + 1;
     }
 
     @Override
     public Member save(Member entity) {
-        if (entity.getId() == 0) entity.setId(getNextId());
+        if (entity.getId() == null) entity.setId(getNextId());
         for (int i = 0; i < members.size(); i++) {
-            if (members.get(i).getId() == entity.getId()) {
+            if (entity.getId().equals(members.get(i).getId())) {
                 members.set(i, entity);
                 saveAll();
                 return entity;
@@ -65,7 +65,7 @@ public class MembersRepository implements BaseRepository<Member> {
     @Override
     public Member findById(Long id) {
         if (id == null) return null;
-        return members.stream().filter(m -> m.getId() == id).findFirst().orElse(null);
+        return members.stream().filter(m -> id.equals(m.getId())).findFirst().orElse(null);
     }
 
     @Override

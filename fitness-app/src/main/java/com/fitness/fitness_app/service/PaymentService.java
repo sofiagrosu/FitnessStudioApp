@@ -19,13 +19,16 @@ public class PaymentService {
     private final PaymentsRepository paymentsRepository;
     private final ReceiptsRepository receiptsRepository;
     private final SubscriptionService subscriptionService;
+    private final MemberService memberService;
 
     public PaymentService(PaymentsRepository paymentsRepository,
                           ReceiptsRepository receiptsRepository,
-                          SubscriptionService subscriptionService) {
+                          SubscriptionService subscriptionService,
+                          MemberService memberService) {
         this.paymentsRepository = paymentsRepository;
         this.receiptsRepository = receiptsRepository;
         this.subscriptionService = subscriptionService;
+        this.memberService = memberService;
     }
 
     public Payment registerPayment(Long memberId, Long subscriptionId, Double amount, PaymentMethod method) {
@@ -41,6 +44,7 @@ public class PaymentService {
 
         Payment payment = new Payment(null, memberId, subscriptionId, amount, method, LocalDateTime.now());
         paymentsRepository.save(payment);
+        subscriptionService.markAsPaid(subscriptionId);
         createReceipt(payment);
         return payment;
     }
@@ -54,6 +58,7 @@ public class PaymentService {
 
     public List<Payment> getPaymentsForMember(Long memberId) {
         if (memberId == null) throw new ValidationException("Member id is required");
+        memberService.getMemberById(memberId); // throws NotFoundException if member doesn't exist
         return paymentsRepository.findByMemberId(memberId);
     }
 

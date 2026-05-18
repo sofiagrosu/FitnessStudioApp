@@ -5,6 +5,8 @@ import com.fitness.fitness_app.exception.ForbiddenException;
 import com.fitness.fitness_app.exception.NotFoundException;
 import com.fitness.fitness_app.exception.ValidationException;
 import com.fitness.fitness_app.model.Course;
+import com.fitness.fitness_app.model.CourseType;
+import com.fitness.fitness_app.model.DayOfWeek;
 import com.fitness.fitness_app.model.Location;
 import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.model.SignUp;
@@ -144,7 +146,7 @@ public class CoursesService {
         return "Course is full. Member was added to the waitlist at position " + waitlistEntry.getPosition();
     }
 
-    public String createCourse(Course course) {
+    public Course createCourse(Course course) {
         validateCourseData(course);
         validateTrainerExists(course.getTrainerId());
         validateLocationExists(course.getLocationId());
@@ -152,7 +154,7 @@ public class CoursesService {
         // Un curs nou incepe intotdeauna cu ocupanta 0; se populeaza prin sign-up-uri.
         course.setCurrentOccupancy(0);
         coursesRepository.save(course);
-        return "Course created successfully";
+        return course;
     }
 
     public String updateCourse(Long courseId, Course updatedCourse) {
@@ -273,6 +275,36 @@ public class CoursesService {
     public List<Course> getCoursesByLocation(Long locationId) {
         validateLocationExists(locationId);
         return coursesRepository.findByLocationId(locationId);
+    }
+
+    public List<Course> getCoursesByType(CourseType type) {
+        if (type == null) throw new ValidationException("Course type is required");
+        return coursesRepository.findByType(type);
+    }
+
+    public List<Course> getCoursesByDayOfWeek(DayOfWeek day) {
+        if (day == null) throw new ValidationException("Day of week is required");
+        return coursesRepository.findByDayOfWeek(day);
+    }
+
+    public List<Course> searchCoursesByName(String keyword) {
+        if (keyword == null || keyword.isBlank()) throw new ValidationException("Search keyword is required");
+        return coursesRepository.searchByName(keyword);
+    }
+
+    public List<Course> getFullCourses() {
+        return coursesRepository.findFullCourses();
+    }
+
+    public List<Course> getCoursesByLocationAndType(Long locationId, CourseType type) {
+        validateLocationExists(locationId);
+        if (type == null) throw new ValidationException("Course type is required");
+        return coursesRepository.findByLocationAndType(locationId, type);
+    }
+
+    public List<WaitlistEntry> getWaitlistForCourse(Long courseId) {
+        getCourseById(courseId);
+        return waitlistsRepository.findByCourseId(courseId);
     }
 
     public SignUpStatus getSignUpStatus(Long courseId, Long memberId) {

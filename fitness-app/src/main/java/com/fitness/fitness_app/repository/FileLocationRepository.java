@@ -52,6 +52,17 @@ public class FileLocationRepository implements BaseRepository<Location> {
     @Override
     public Location save(Location location) {
         if (location.getId() == null) location.setId(getNextId());
+        // Asigna ID-uri zonelor care nu au
+        if (location.getZones() != null) {
+            long nextZoneId = location.getZones().stream()
+                    .mapToLong(z -> z.getId() == null ? 0L : z.getId())
+                    .max().orElse(0L) + 1;
+            for (var zone : location.getZones()) {
+                if (zone.getId() == null) {
+                    zone.setId(nextZoneId++);
+                }
+            }
+        }
         Location existing = findById(location.getId());
         if (existing != null) locations.remove(existing);
         locations.add(location);

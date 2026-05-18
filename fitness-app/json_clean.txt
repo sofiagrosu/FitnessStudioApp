@@ -1,0 +1,2 @@
+$d = "src\main\resources\data"
+"members.json","users.json","courses.json","signups.json","waitlistEntries.json","subscriptions.json","payments.json","receipts.json","checkins.json","locations.json" | % { Set-Content "$d\$_" "[]" -Encoding utf8 }

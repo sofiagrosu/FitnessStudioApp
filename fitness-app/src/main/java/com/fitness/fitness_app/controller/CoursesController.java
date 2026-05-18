@@ -1,7 +1,10 @@
 package com.fitness.fitness_app.controller;
 
 import com.fitness.fitness_app.model.Course;
+import com.fitness.fitness_app.model.CourseType;
+import com.fitness.fitness_app.model.DayOfWeek;
 import com.fitness.fitness_app.model.SignUp;
+import com.fitness.fitness_app.model.WaitlistEntry;
 import com.fitness.fitness_app.service.CoursesService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +33,7 @@ public class CoursesController {
     }
 
     @PostMapping
-    public ResponseEntity<String> createCourse(@RequestBody Course course) {
+    public ResponseEntity<Course> createCourse(@RequestBody Course course) {
         return ResponseEntity.ok(coursesService.createCourse(course));
     }
 
@@ -142,6 +145,37 @@ public class CoursesController {
     @GetMapping("/{courseId}/signups")
     public ResponseEntity<List<SignUp>> getEnrolledSignUps(@PathVariable Long courseId) {
         return ResponseEntity.ok(coursesService.getEnrolledSignUpsForCourse(courseId));
+    }
+
+    @GetMapping("/type/{type}")
+    public ResponseEntity<List<Course>> getCoursesByType(@PathVariable CourseType type) {
+        return ResponseEntity.ok(coursesService.getCoursesByType(type));
+    }
+
+    @GetMapping("/day/{day}")
+    public ResponseEntity<List<Course>> getCoursesByDay(@PathVariable DayOfWeek day) {
+        return ResponseEntity.ok(coursesService.getCoursesByDayOfWeek(day));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Course>> searchCourses(@RequestParam String keyword) {
+        return ResponseEntity.ok(coursesService.searchCoursesByName(keyword));
+    }
+
+    @GetMapping("/full")
+    public ResponseEntity<List<Course>> getFullCourses() {
+        return ResponseEntity.ok(coursesService.getFullCourses());
+    }
+
+    @GetMapping("/location/{locationId}/type/{type}")
+    public ResponseEntity<List<Course>> getCoursesByLocationAndType(@PathVariable Long locationId,
+                                                                    @PathVariable CourseType type) {
+        return ResponseEntity.ok(coursesService.getCoursesByLocationAndType(locationId, type));
+    }
+
+    @GetMapping("/{courseId}/waitlist")
+    public ResponseEntity<List<WaitlistEntry>> getWaitlistForCourse(@PathVariable Long courseId) {
+        return ResponseEntity.ok(coursesService.getWaitlistForCourse(courseId));
     }
 
     public record SignUpRequest(Long memberId) {}

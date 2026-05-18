@@ -17,7 +17,7 @@ import java.io.Serializable;
         @JsonSubTypes.Type(value = Member.class, name = "MEMBER")
 })
 public interface UserI extends Serializable {
-    long getId();
+    Long getId();
     Role getRole();
     String getName();
     boolean isActive();

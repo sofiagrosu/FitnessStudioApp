@@ -49,11 +49,11 @@ public class FileUserRepository implements BaseRepository<UserI> {
     }
 
     private long getNextId() {
-        return users.stream().mapToLong(UserI::getId).max().orElse(0L) + 1;
+        return users.stream().mapToLong(u -> u.getId() == null ? 0L : u.getId()).max().orElse(0L) + 1;
     }
 
     private void assignIdIfNeeded(UserI user) {
-        if (user.getId() != 0) return;
+        if (user.getId() != null) return;
         long id = getNextId();
         if (user instanceof Admin admin) admin.setId(id);
         else if (user instanceof Receptionist r) r.setId(id);
@@ -73,7 +73,7 @@ public class FileUserRepository implements BaseRepository<UserI> {
     @Override
     public UserI findById(Long id) {
         if (id == null) return null;
-        return users.stream().filter(u -> u.getId() == id).findFirst().orElse(null);
+        return users.stream().filter(u -> id.equals(u.getId())).findFirst().orElse(null);
     }
 
     @Override

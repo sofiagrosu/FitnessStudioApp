@@ -28,6 +28,8 @@ public class AdminService {
         }
         if (newUser.getEmail() == null || newUser.getEmail().isBlank())
             throw new ValidationException("Email is required");
+        if (newUser.getPassword() == null || newUser.getPassword().isBlank())
+            throw new ValidationException("Password is required");
 
         UserI existing = userRepo.findByEmail(newUser.getEmail());
         if (existing != null) {
