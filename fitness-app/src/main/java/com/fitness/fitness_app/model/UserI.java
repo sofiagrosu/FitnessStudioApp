@@ -13,13 +13,14 @@ import java.io.Serializable;
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Admin.class, name = "ADMIN"),
         @JsonSubTypes.Type(value = Receptionist.class, name = "RECEPTIONIST"),
-        @JsonSubTypes.Type(value = Trainer.class, name = "TRAINER")
+        @JsonSubTypes.Type(value = Trainer.class, name = "TRAINER"),
+        @JsonSubTypes.Type(value = Member.class, name = "MEMBER")
 })
 public interface UserI extends Serializable {
-    long getId();
+    Long getId();
     Role getRole();
     String getName();
-    Boolean getIsActive();
+    boolean isActive();
     String getInformations();
 
     String getEmail();

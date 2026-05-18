@@ -13,6 +13,7 @@ public class Subscription {
     private LocalDate endDate;
     private Integer remainingEntries;
     private Double price;
+    private boolean paid = false;
 
     public Subscription() {}
 
@@ -54,4 +55,6 @@ public class Subscription {
     public void setRemainingEntries(Integer remainingEntries) { this.remainingEntries = remainingEntries; }
     public Double getPrice() { return price; }
     public void setPrice(Double price) { this.price = price; }
+    public boolean isPaid() { return paid; }
+    public void setPaid(boolean paid) { this.paid = paid; }
 }

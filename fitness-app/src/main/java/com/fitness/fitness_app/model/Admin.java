@@ -1,11 +1,14 @@
 package com.fitness.fitness_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fitness.fitness_app.model.enums.Role;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Admin implements UserI {
     private static final long serialVersionUID = 1L;
 
-    private long id;
+    private Long id;
     private String email;
     private String password;
     private Role role;
@@ -18,7 +21,7 @@ public class Admin implements UserI {
         this.active = true;
     }
 
-    public Admin(long id, String email, String password, String firstName, String lastName) {
+    public Admin(Long id, String email, String password, String firstName, String lastName) {
         this.id = id;
         this.email = email;
         this.password = password;
@@ -28,17 +31,17 @@ public class Admin implements UserI {
         this.lastName = lastName;
     }
 
-    @Override public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    @Override public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     @Override public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
 
+    @JsonIgnore
     @Override
     public String getName() { return firstName + " " + lastName; }
 
-    @Override public Boolean getIsActive() { return active; }
-
+    @JsonIgnore
     @Override
     public String getInformations() {
         return "Admin: " + getName() + " (" + email + ")";
@@ -51,7 +54,7 @@ public class Admin implements UserI {
     public void setPassword(String password) { this.password = password; }
 
     @Override public void setActive(boolean active) { this.active = active; }
-    public boolean isActive() { return active; }
+    @Override public boolean isActive() { return active; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }

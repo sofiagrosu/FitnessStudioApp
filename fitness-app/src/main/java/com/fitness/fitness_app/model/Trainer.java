@@ -1,11 +1,14 @@
 package com.fitness.fitness_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fitness.fitness_app.model.enums.Role;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Trainer implements UserI {
     private static final long serialVersionUID = 1L;
 
-    private long id;
+    private Long id;
     private String firstName;
     private String lastName;
     private String email;
@@ -18,7 +21,7 @@ public class Trainer implements UserI {
         this.active = true;
     }
 
-    public Trainer(long id, String firstName, String lastName, String email, String password) {
+    public Trainer(Long id, String firstName, String lastName, String email, String password) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -28,17 +31,17 @@ public class Trainer implements UserI {
         this.role = Role.TRAINER;
     }
 
-    @Override public long getId() { return id; }
-    public void setId(long id) { this.id = id; }
+    @Override public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     @Override public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
 
+    @JsonIgnore
     @Override
     public String getName() { return firstName + " " + lastName; }
 
-    @Override public Boolean getIsActive() { return active; }
-
+    @JsonIgnore
     @Override
     public String getInformations() {
         return "Trainer: " + getName() + " (" + email + ")";
@@ -51,7 +54,7 @@ public class Trainer implements UserI {
     public void setPassword(String password) { this.password = password; }
 
     @Override public void setActive(boolean active) { this.active = active; }
-    public boolean isActive() { return active; }
+    @Override public boolean isActive() { return active; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
