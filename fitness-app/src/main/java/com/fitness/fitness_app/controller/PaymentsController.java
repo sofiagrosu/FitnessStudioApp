@@ -39,10 +39,5 @@ public class PaymentsController {
         return ResponseEntity.ok(paymentService.getReceiptForPayment(paymentId));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
     public record PaymentRequest(Long memberId, Long subscriptionId, Double amount, PaymentMethod method) {}
 }

@@ -1,6 +1,5 @@
 package com.fitness.fitness_app.model;
-import java.time.LocalTime;
- import java.time.LocalDateTime;
+import java.time.LocalDateTime;
 
 public class SignUp {
 

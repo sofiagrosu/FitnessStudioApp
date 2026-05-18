@@ -14,9 +14,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Repository
-public class SubscriptionsRepository implements FileRepository<Subscription> {
+public class SubscriptionsRepository implements BaseRepository<Subscription> {
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<Subscription> subscriptions;
@@ -30,7 +31,7 @@ public class SubscriptionsRepository implements FileRepository<Subscription> {
     }
 
     private List<Subscription> loadFromFile() {
-        File file = new File(filePath);
+        File file = JsonFileUtils.resolve(filePath);
         if (!file.exists() || file.length() == 0) return new ArrayList<>();
         try {
             return objectMapper.readValue(file, new TypeReference<List<Subscription>>() {});
@@ -39,67 +40,71 @@ public class SubscriptionsRepository implements FileRepository<Subscription> {
         }
     }
 
-    private Long getNextId() {
-        return subscriptions.stream().map(Subscription::getId).max(Long::compareTo).orElse(0L) + 1;
-    }
-
-    @Override public List<Subscription> getAll() { return new ArrayList<>(subscriptions); }
-
-    @Override
-    public void SaveAll(List<Subscription> items) {
-        this.subscriptions = new ArrayList<>(items);
+    private void saveAll() {
         try {
-            File file = new File(filePath);
+            File file = JsonFileUtils.resolve(filePath);
             if (file.getParentFile() != null) file.getParentFile().mkdirs();
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, this.subscriptions);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, subscriptions);
         } catch (IOException e) {
             throw new RuntimeException("Error saving subscriptions to JSON file", e);
         }
     }
 
-    @Override
-    public void add(Subscription item) {
-        if (item.getId() == null) item.setId(getNextId());
-        subscriptions.add(item);
-        SaveAll(subscriptions);
+    private Long getNextId() {
+        return subscriptions.stream()
+                .map(Subscription::getId)
+                .filter(Objects::nonNull)
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L) + 1;
     }
 
     @Override
-    public void update(Subscription item) {
+    public Subscription save(Subscription entity) {
+        if (entity.getId() == null) entity.setId(getNextId());
         for (int i = 0; i < subscriptions.size(); i++) {
-            if (subscriptions.get(i).getId().equals(item.getId())) {
-                subscriptions.set(i, item);
-                SaveAll(subscriptions);
-                return;
+            if (subscriptions.get(i).getId().equals(entity.getId())) {
+                subscriptions.set(i, entity);
+                saveAll();
+                return entity;
             }
         }
-        throw new RuntimeException("Subscription not found");
-    }
-
-    @Override
-    public void delete(Long id) {
-        boolean removed = subscriptions.removeIf(subscription -> subscription.getId().equals(id));
-        if (!removed) throw new RuntimeException("Subscription not found");
-        SaveAll(subscriptions);
+        subscriptions.add(entity);
+        saveAll();
+        return entity;
     }
 
     @Override
     public Subscription findById(Long id) {
-        return subscriptions.stream().filter(subscription -> subscription.getId().equals(id)).findFirst().orElse(null);
+        if (id == null) return null;
+        return subscriptions.stream().filter(s -> s.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    @Override
+    public List<Subscription> findAll() {
+        return new ArrayList<>(subscriptions);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        boolean removed = subscriptions.removeIf(s -> s.getId().equals(id));
+        if (!removed) throw new RuntimeException("Subscription not found");
+        saveAll();
     }
 
     public Subscription findActiveByMemberId(Long memberId) {
+        if (memberId == null) return null;
         return subscriptions.stream()
-                .filter(subscription -> subscription.getMemberId().equals(memberId))
-                .filter(subscription -> subscription.getStatus() == SubscriptionStatus.ACTIVE)
-                .max(Comparator.comparing(Subscription::getStartDate))
+                .filter(s -> memberId.equals(s.getMemberId()))
+                .filter(s -> s.getStatus() == SubscriptionStatus.ACTIVE)
+                .max(Comparator.comparing(Subscription::getStartDate, Comparator.nullsLast(Comparator.naturalOrder())))
                 .orElse(null);
     }
 
     public List<Subscription> findByMemberId(Long memberId) {
-        return subscriptions.stream().filter(subscription -> subscription.getMemberId().equals(memberId)).toList();
+        if (memberId == null) return List.of();
+        return subscriptions.stream().filter(s -> memberId.equals(s.getMemberId())).toList();
     }
-
-    @Override
-    public List<String> getAllInformation() { return subscriptions.stream().map(Subscription::toString).toList(); }
 }
+
+

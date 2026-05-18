@@ -1,5 +1,8 @@
 package com.fitness.fitness_app.service;
 
+import com.fitness.fitness_app.exception.ConflictException;
+import com.fitness.fitness_app.exception.NotFoundException;
+import com.fitness.fitness_app.exception.ValidationException;
 import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.repository.MembersRepository;
 import org.springframework.stereotype.Service;
@@ -18,48 +21,65 @@ public class MemberService {
     public Member registerMember(Member member) {
         validateMember(member);
         if (membersRepository.findByEmail(member.getEmail()) != null) {
-            throw new RuntimeException("A member with this email already exists");
+            throw new ConflictException("A member with this email already exists");
         }
         if (member.getQrCode() == null || member.getQrCode().isBlank()) {
             member.setQrCode(generateUniqueQrCode());
         }
         member.setActive(true);
-        membersRepository.add(member);
+        membersRepository.save(member);
         return member;
     }
 
     public Member updateMember(Long memberId, Member updatedMember) {
         Member existingMember = getMemberById(memberId);
+        if (updatedMember.getFirstName() == null || updatedMember.getFirstName().isBlank())
+            throw new ValidationException("First name is required");
+        if (updatedMember.getLastName() == null || updatedMember.getLastName().isBlank())
+            throw new ValidationException("Last name is required");
+        if (updatedMember.getEmail() == null || updatedMember.getEmail().isBlank())
+            throw new ValidationException("Email is required");
+        if (!updatedMember.getEmail().equalsIgnoreCase(existingMember.getEmail())) {
+            if (membersRepository.findByEmail(updatedMember.getEmail()) != null)
+                throw new ConflictException("Email already used by another member");
+        }
         existingMember.setFirstName(updatedMember.getFirstName());
         existingMember.setLastName(updatedMember.getLastName());
         existingMember.setEmail(updatedMember.getEmail());
         existingMember.setPhone(updatedMember.getPhone());
-        existingMember.setActive(updatedMember.isActive());
-        membersRepository.update(existingMember);
+        membersRepository.save(existingMember);
         return existingMember;
     }
 
-    public void deactivateMember(Long memberId) {
-        membersRepository.delete(memberId);
+    public Member changePassword(Long memberId, String oldPassword, String newPassword) {
+        Member member = getMemberById(memberId);
+        if (member.getPassword() == null || !member.getPassword().equals(oldPassword))
+            throw new ValidationException("Current password is incorrect");
+        if (newPassword == null || newPassword.isBlank())
+            throw new ValidationException("New password is required");
+        member.setPassword(newPassword);
+        membersRepository.save(member);
+        return member;
     }
 
     public List<Member> getAllMembers() {
-        return membersRepository.getAll();
+        return membersRepository.findAll();
     }
 
     public Member getMemberById(Long memberId) {
+        if (memberId == null) throw new ValidationException("Member id is required");
         Member member = membersRepository.findById(memberId);
-        if (member == null) {
-            throw new RuntimeException("Member not found");
-        }
+        if (member == null) throw new NotFoundException("Member not found");
         return member;
+    }
+
+    public Member findByEmail(String email) {
+        return membersRepository.findByEmail(email);
     }
 
     public Member findByQrCode(String qrCode) {
         Member member = membersRepository.findByQrCode(qrCode);
-        if (member == null) {
-            throw new RuntimeException("No member found for this QR code");
-        }
+        if (member == null) throw new NotFoundException("No member found for this QR code");
         return member;
     }
 
@@ -72,9 +92,12 @@ public class MemberService {
     }
 
     private void validateMember(Member member) {
-        if (member == null) throw new RuntimeException("Member data is required");
-        if (member.getFirstName() == null || member.getFirstName().isBlank()) throw new RuntimeException("First name is required");
-        if (member.getLastName() == null || member.getLastName().isBlank()) throw new RuntimeException("Last name is required");
-        if (member.getEmail() == null || member.getEmail().isBlank()) throw new RuntimeException("Email is required");
+        if (member == null) throw new ValidationException("Member data is required");
+        if (member.getFirstName() == null || member.getFirstName().isBlank())
+            throw new ValidationException("First name is required");
+        if (member.getLastName() == null || member.getLastName().isBlank())
+            throw new ValidationException("Last name is required");
+        if (member.getEmail() == null || member.getEmail().isBlank())
+            throw new ValidationException("Email is required");
     }
 }

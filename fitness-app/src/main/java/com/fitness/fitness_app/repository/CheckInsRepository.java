@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class CheckInsRepository implements FileRepository<CheckIn> {
+public class CheckInsRepository implements BaseRepository<CheckIn> {
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<CheckIn> checkIns;
@@ -28,30 +28,82 @@ public class CheckInsRepository implements FileRepository<CheckIn> {
     }
 
     private List<CheckIn> loadFromFile() {
-        File file = new File(filePath);
+        File file = JsonFileUtils.resolve(filePath);
         if (!file.exists() || file.length() == 0) return new ArrayList<>();
-        try { return objectMapper.readValue(file, new TypeReference<List<CheckIn>>() {}); }
-        catch (IOException e) { throw new RuntimeException("Error reading check-ins from JSON file", e); }
+        try {
+            return objectMapper.readValue(file, new TypeReference<List<CheckIn>>() {});
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading check-ins from JSON file", e);
+        }
     }
 
-    private Long getNextId() { return checkIns.stream().map(CheckIn::getId).max(Long::compareTo).orElse(0L) + 1; }
-    @Override public List<CheckIn> getAll() { return new ArrayList<>(checkIns); }
+    private void saveAll() {
+        try {
+            File file = JsonFileUtils.resolve(filePath);
+            if (file.getParentFile() != null) file.getParentFile().mkdirs();
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, checkIns);
+        } catch (IOException e) {
+            throw new RuntimeException("Error saving check-ins to JSON file", e);
+        }
+    }
+
+    private Long getNextId() {
+        return checkIns.stream()
+                .map(CheckIn::getId)
+                .filter(id -> id != null)
+                .mapToLong(Long::longValue)
+                .max()
+                .orElse(0L) + 1;
+    }
 
     @Override
-    public void SaveAll(List<CheckIn> items) {
-        this.checkIns = new ArrayList<>(items);
-        try {
-            File file = new File(filePath);
-            if (file.getParentFile() != null) file.getParentFile().mkdirs();
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, this.checkIns);
-        } catch (IOException e) { throw new RuntimeException("Error saving check-ins to JSON file", e); }
+    public CheckIn save(CheckIn entity) {
+        if (entity.getId() == null) entity.setId(getNextId());
+        for (int i = 0; i < checkIns.size(); i++) {
+            if (checkIns.get(i).getId().equals(entity.getId())) {
+                checkIns.set(i, entity);
+                saveAll();
+                return entity;
+            }
+        }
+        checkIns.add(entity);
+        saveAll();
+        return entity;
     }
 
-    @Override public void add(CheckIn item) { if (item.getId() == null) item.setId(getNextId()); checkIns.add(item); SaveAll(checkIns); }
-    @Override public void update(CheckIn item) { for (int i=0;i<checkIns.size();i++) { if (checkIns.get(i).getId().equals(item.getId())) { checkIns.set(i,item); SaveAll(checkIns); return; } } throw new RuntimeException("Check-in not found"); }
-    @Override public void delete(Long id) { boolean removed=checkIns.removeIf(checkIn -> checkIn.getId().equals(id)); if(!removed) throw new RuntimeException("Check-in not found"); SaveAll(checkIns); }
-    @Override public CheckIn findById(Long id) { return checkIns.stream().filter(checkIn -> checkIn.getId().equals(id)).findFirst().orElse(null); }
-    public List<CheckIn> findOpenByMemberId(Long memberId) { return checkIns.stream().filter(checkIn -> checkIn.getMemberId().equals(memberId) && checkIn.getCheckOutTime() == null).toList(); }
-    public List<CheckIn> findOpenByLocationId(Long locationId) { return checkIns.stream().filter(checkIn -> checkIn.getLocationId().equals(locationId) && checkIn.getCheckOutTime() == null).toList(); }
-    @Override public List<String> getAllInformation() { return checkIns.stream().map(CheckIn::toString).toList(); }
+    @Override
+    public CheckIn findById(Long id) {
+        if (id == null) return null;
+        return checkIns.stream().filter(c -> c.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    @Override
+    public List<CheckIn> findAll() {
+        return new ArrayList<>(checkIns);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        boolean removed = checkIns.removeIf(c -> c.getId().equals(id));
+        if (!removed) throw new RuntimeException("Check-in not found");
+        saveAll();
+    }
+
+    public List<CheckIn> findOpenByMemberId(Long memberId) {
+        return checkIns.stream()
+                .filter(c -> c.getMemberId().equals(memberId) && c.getCheckOutTime() == null)
+                .toList();
+    }
+
+    public List<CheckIn> findAllByMemberId(Long memberId) {
+        return checkIns.stream().filter(c -> c.getMemberId().equals(memberId)).toList();
+    }
+
+    public List<CheckIn> findOpenByLocationId(Long locationId) {
+        return checkIns.stream()
+                .filter(c -> c.getLocationId().equals(locationId) && c.getCheckOutTime() == null)
+                .toList();
+    }
 }
+
+

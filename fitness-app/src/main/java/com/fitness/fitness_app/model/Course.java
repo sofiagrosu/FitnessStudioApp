@@ -1,7 +1,10 @@
 package com.fitness.fitness_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalTime;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Course {
 
     public Course() {
@@ -110,7 +113,11 @@ public Long getLocationId() {
         this.startTime = startTime;
     }
 
+    @JsonIgnore
     public LocalTime getEndTime() {
+        if (startTime == null || duration == null) {
+            return null;
+        }
         return startTime.plusMinutes(duration);
     }
 

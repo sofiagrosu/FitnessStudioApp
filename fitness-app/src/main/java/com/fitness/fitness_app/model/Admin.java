@@ -1,7 +1,10 @@
 package com.fitness.fitness_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fitness.fitness_app.model.enums.Role;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Admin implements UserI {
     private static final long serialVersionUID = 1L;
 
@@ -34,11 +37,11 @@ public class Admin implements UserI {
     @Override public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
 
+    @JsonIgnore
     @Override
     public String getName() { return firstName + " " + lastName; }
 
-    @Override public Boolean getIsActive() { return active; }
-
+    @JsonIgnore
     @Override
     public String getInformations() {
         return "Admin: " + getName() + " (" + email + ")";
@@ -51,7 +54,7 @@ public class Admin implements UserI {
     public void setPassword(String password) { this.password = password; }
 
     @Override public void setActive(boolean active) { this.active = active; }
-    public boolean isActive() { return active; }
+    @Override public boolean isActive() { return active; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }

@@ -1,10 +1,1 @@
-[ {
-  "id" : 1,
-  "memberId" : 1,
-  "type" : "MONTHLY",
-  "status" : "ACTIVE",
-  "startDate" : "2026-05-17",
-  "endDate" : "2026-06-17",
-  "remainingEntries" : null,
-  "price" : 150.0
-} ]
+[]

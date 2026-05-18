@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class MembersRepository implements FileRepository<Member> {
+public class MembersRepository implements BaseRepository<Member> {
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<Member> members;
@@ -24,10 +24,8 @@ public class MembersRepository implements FileRepository<Member> {
     }
 
     private List<Member> loadFromFile() {
-        File file = new File(filePath);
-        if (!file.exists() || file.length() == 0) {
-            return new ArrayList<>();
-        }
+        File file = JsonFileUtils.resolve(filePath);
+        if (!file.exists() || file.length() == 0) return new ArrayList<>();
         try {
             return objectMapper.readValue(file, new TypeReference<List<Member>>() {});
         } catch (IOException e) {
@@ -35,73 +33,58 @@ public class MembersRepository implements FileRepository<Member> {
         }
     }
 
-    private Long getNextId() {
-        return members.stream().map(Member::getId).max(Long::compareTo).orElse(0L) + 1;
-    }
-
-    @Override
-    public List<Member> getAll() { return new ArrayList<>(members); }
-
-    @Override
-    public void SaveAll(List<Member> items) {
-        this.members = new ArrayList<>(items);
+    private void saveAll() {
         try {
-            File file = new File(filePath);
+            File file = JsonFileUtils.resolve(filePath);
             if (file.getParentFile() != null) file.getParentFile().mkdirs();
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, this.members);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, members);
         } catch (IOException e) {
             throw new RuntimeException("Error saving members to JSON file", e);
         }
     }
 
-    @Override
-    public void add(Member item) {
-        if (item.getId() == null) item.setId(getNextId());
-        members.add(item);
-        SaveAll(members);
+    private long getNextId() {
+        return members.stream().mapToLong(Member::getId).max().orElse(0L) + 1;
     }
 
     @Override
-    public void update(Member item) {
+    public Member save(Member entity) {
+        if (entity.getId() == 0) entity.setId(getNextId());
         for (int i = 0; i < members.size(); i++) {
-            if (members.get(i).getId().equals(item.getId())) {
-                members.set(i, item);
-                SaveAll(members);
-                return;
+            if (members.get(i).getId() == entity.getId()) {
+                members.set(i, entity);
+                saveAll();
+                return entity;
             }
         }
-        throw new RuntimeException("Member not found");
-    }
-
-    @Override
-    public void delete(Long id) {
-        Member member = findById(id);
-        if (member == null) throw new RuntimeException("Member not found");
-        member.setActive(false);
-        update(member);
+        members.add(entity);
+        saveAll();
+        return entity;
     }
 
     @Override
     public Member findById(Long id) {
-        return members.stream().filter(member -> member.getId().equals(id)).findFirst().orElse(null);
-    }
-
-    public Member findByEmail(String email) {
-        return members.stream()
-                .filter(member -> member.getEmail() != null && member.getEmail().equalsIgnoreCase(email))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public Member findByQrCode(String qrCode) {
-        return members.stream()
-                .filter(member -> member.getQrCode() != null && member.getQrCode().equals(qrCode))
-                .findFirst()
-                .orElse(null);
+        if (id == null) return null;
+        return members.stream().filter(m -> m.getId() == id).findFirst().orElse(null);
     }
 
     @Override
-    public List<String> getAllInformation() {
-        return members.stream().map(Member::toString).toList();
+    public List<Member> findAll() {
+        return new ArrayList<>(members);
+    }
+
+    public Member findByEmail(String email) {
+        if (email == null) return null;
+        return members.stream()
+                .filter(m -> m.getEmail() != null && m.getEmail().equalsIgnoreCase(email))
+                .findFirst().orElse(null);
+    }
+
+    public Member findByQrCode(String qrCode) {
+        if (qrCode == null) return null;
+        return members.stream()
+                .filter(m -> m.getQrCode() != null && m.getQrCode().equals(qrCode))
+                .findFirst().orElse(null);
     }
 }
+
