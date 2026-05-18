@@ -175,9 +175,9 @@ class FitnessFunctionalFlowTests {
                 1L
         );
 
-        String createMessage = coursesService.createCourse(course);
-        assertEquals("Course created successfully", createMessage);
-        assertNotNull(course.getId());
+        Course createdCourse = coursesService.createCourse(course);
+        assertNotNull(createdCourse);
+        assertNotNull(createdCourse.getId());
         assertEquals(0, course.getCurrentOccupancy(), "New course occupancy must be reset to 0");
         this.courseId = course.getId();
 
