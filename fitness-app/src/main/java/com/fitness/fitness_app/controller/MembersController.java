@@ -27,20 +27,16 @@ public class MembersController {
         return ResponseEntity.ok(memberService.getMemberById(memberId));
     }
 
-    @PostMapping
-    public ResponseEntity<Member> registerMember(@RequestBody Member member) {
-        return ResponseEntity.ok(memberService.registerMember(member));
-    }
-
     @PutMapping("/{memberId}")
     public ResponseEntity<Member> updateMember(@PathVariable Long memberId, @RequestBody Member member) {
         return ResponseEntity.ok(memberService.updateMember(memberId, member));
     }
 
-    @DeleteMapping("/{memberId}")
-    public ResponseEntity<String> deactivateMember(@PathVariable Long memberId) {
-        memberService.deactivateMember(memberId);
-        return ResponseEntity.ok("Member deactivated successfully");
+    @PatchMapping("/{memberId}/password")
+    public ResponseEntity<String> changePassword(@PathVariable Long memberId,
+                                                  @RequestBody ChangePasswordRequest request) {
+        memberService.changePassword(memberId, request.oldPassword(), request.newPassword());
+        return ResponseEntity.ok("Password changed successfully");
     }
 
     @GetMapping("/qr/{qrCode}")
@@ -48,8 +44,5 @@ public class MembersController {
         return ResponseEntity.ok(memberService.findByQrCode(qrCode));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
+    public record ChangePasswordRequest(String oldPassword, String newPassword) {}
 }

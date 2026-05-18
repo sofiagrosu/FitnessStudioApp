@@ -20,12 +20,18 @@ public class SubscriptionsController {
 
     @PostMapping
     public ResponseEntity<Subscription> createSubscription(@RequestBody CreateSubscriptionRequest request) {
-        return ResponseEntity.ok(subscriptionService.createSubscription(request.memberId(), request.type(), request.price()));
+        return ResponseEntity.ok(
+                subscriptionService.createSubscription(request.memberId(), request.type(), request.price()));
     }
 
     @PutMapping("/{subscriptionId}/renew")
     public ResponseEntity<Subscription> renewSubscription(@PathVariable Long subscriptionId) {
         return ResponseEntity.ok(subscriptionService.renewSubscription(subscriptionId));
+    }
+
+    @PutMapping("/{subscriptionId}/suspend")
+    public ResponseEntity<Subscription> suspendSubscription(@PathVariable Long subscriptionId) {
+        return ResponseEntity.ok(subscriptionService.suspendSubscription(subscriptionId));
     }
 
     @GetMapping("/member/{memberId}")
@@ -35,12 +41,9 @@ public class SubscriptionsController {
 
     @GetMapping("/member/{memberId}/active")
     public ResponseEntity<Subscription> getActiveSubscriptionForMember(@PathVariable Long memberId) {
-        return ResponseEntity.ok(subscriptionService.getActiveSubscriptionForMember(memberId));
-    }
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+        Subscription subscription = subscriptionService.getActiveSubscriptionForMember(memberId);
+        if (subscription == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(subscription);
     }
 
     public record CreateSubscriptionRequest(Long memberId, SubscriptionType type, Double price) {}

@@ -38,9 +38,9 @@ public class CheckInsController {
         return ResponseEntity.ok(checkInService.countCurrentOccupancyByLocation(locationId));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    @GetMapping("/member/{memberId}")
+    public ResponseEntity<List<CheckIn>> getCheckInHistoryForMember(@PathVariable Long memberId) {
+        return ResponseEntity.ok(checkInService.getCheckInHistoryForMember(memberId));
     }
 
     public record CheckInRequest(String qrCode, Long locationId, Long zoneId) {}

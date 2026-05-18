@@ -1,18 +1,53 @@
 package com.fitness.fitness_app.service;
 
+import com.fitness.fitness_app.exception.ConflictException;
+import com.fitness.fitness_app.exception.ValidationException;
+import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.model.UserI;
 import com.fitness.fitness_app.repository.FileUserRepository;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AuthService {
-    private final FileUserRepository userRepo = new FileUserRepository();
+    private final FileUserRepository userRepo;
+    private final MemberService memberService;
 
+    public AuthService(FileUserRepository userRepo, MemberService memberService) {
+        this.userRepo = userRepo;
+        this.memberService = memberService;
+    }
+
+    /**
+     * Incearca autentificarea. Returneaza userul logat sau null daca credentialele sunt gresite.
+     * Controllerul returneaza 401 cand rezultatul e null.
+     * Cauta mai intai in staff (Admin, Receptionist, Trainer), apoi in membri.
+     */
     public UserI login(String email, String password) {
+        if (email == null || email.isBlank() || password == null || password.isBlank()) {
+            return null;
+        }
         UserI user = userRepo.findByEmail(email);
-        if (user != null && user.getPassword().equals(password) && user.getIsActive()) {
-            System.out.println("Login reușit pentru rolul: " + user.getRole());
+        if (user == null) {
+            user = memberService.findByEmail(email);
+        }
+        if (user != null
+                && user.getPassword() != null
+                && user.getPassword().equals(password)
+                && user.isActive()) {
             return user;
         }
-        System.out.println("Email sau parolă incorectă / Cont inactiv.");
         return null;
+    }
+
+    public Member register(Member member) {
+        if (member == null) throw new ValidationException("Member data is required");
+        if (member.getEmail() == null || member.getEmail().isBlank())
+            throw new ValidationException("Email is required");
+        if (member.getPassword() == null || member.getPassword().isBlank())
+            throw new ValidationException("Password is required");
+        if (memberService.findByEmail(member.getEmail()) != null) {
+            throw new ConflictException("Email already registered");
+        }
+        return memberService.registerMember(member);
     }
 }
