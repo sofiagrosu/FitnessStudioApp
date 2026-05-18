@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class PaymentsRepository implements FileRepository<Payment> {
+public class PaymentsRepository implements BaseRepository<Payment> {
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<Payment> payments;
@@ -28,7 +28,7 @@ public class PaymentsRepository implements FileRepository<Payment> {
     }
 
     private List<Payment> loadFromFile() {
-        File file = new File(filePath);
+        File file = JsonFileUtils.resolve(filePath);
         if (!file.exists() || file.length() == 0) return new ArrayList<>();
         try {
             return objectMapper.readValue(file, new TypeReference<List<Payment>>() {});
@@ -37,34 +37,56 @@ public class PaymentsRepository implements FileRepository<Payment> {
         }
     }
 
-    private Long getNextId() { return payments.stream().map(Payment::getId).max(Long::compareTo).orElse(0L) + 1; }
-
-    @Override public List<Payment> getAll() { return new ArrayList<>(payments); }
-
-    @Override
-    public void SaveAll(List<Payment> items) {
-        this.payments = new ArrayList<>(items);
+    private void saveAll() {
         try {
-            File file = new File(filePath);
+            File file = JsonFileUtils.resolve(filePath);
             if (file.getParentFile() != null) file.getParentFile().mkdirs();
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, this.payments);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, payments);
         } catch (IOException e) {
             throw new RuntimeException("Error saving payments to JSON file", e);
         }
     }
 
-    @Override public void add(Payment item) { if (item.getId() == null) item.setId(getNextId()); payments.add(item); SaveAll(payments); }
-
-    @Override
-    public void update(Payment item) {
-        for (int i = 0; i < payments.size(); i++) {
-            if (payments.get(i).getId().equals(item.getId())) { payments.set(i, item); SaveAll(payments); return; }
-        }
-        throw new RuntimeException("Payment not found");
+    private Long getNextId() {
+        return payments.stream().map(Payment::getId).mapToLong(Long::longValue).max().orElse(0L) + 1;
     }
 
-    @Override public void delete(Long id) { boolean removed = payments.removeIf(payment -> payment.getId().equals(id)); if (!removed) throw new RuntimeException("Payment not found"); SaveAll(payments); }
-    @Override public Payment findById(Long id) { return payments.stream().filter(payment -> payment.getId().equals(id)).findFirst().orElse(null); }
-    public List<Payment> findByMemberId(Long memberId) { return payments.stream().filter(payment -> payment.getMemberId().equals(memberId)).toList(); }
-    @Override public List<String> getAllInformation() { return payments.stream().map(Payment::toString).toList(); }
+    @Override
+    public Payment save(Payment entity) {
+        if (entity.getId() == null) entity.setId(getNextId());
+        for (int i = 0; i < payments.size(); i++) {
+            if (payments.get(i).getId().equals(entity.getId())) {
+                payments.set(i, entity);
+                saveAll();
+                return entity;
+            }
+        }
+        payments.add(entity);
+        saveAll();
+        return entity;
+    }
+
+    @Override
+    public Payment findById(Long id) {
+        if (id == null) return null;
+        return payments.stream().filter(p -> p.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    @Override
+    public List<Payment> findAll() {
+        return new ArrayList<>(payments);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        boolean removed = payments.removeIf(p -> p.getId().equals(id));
+        if (!removed) throw new RuntimeException("Payment not found");
+        saveAll();
+    }
+
+    public List<Payment> findByMemberId(Long memberId) {
+        return payments.stream().filter(p -> p.getMemberId().equals(memberId)).toList();
+    }
 }
+
+

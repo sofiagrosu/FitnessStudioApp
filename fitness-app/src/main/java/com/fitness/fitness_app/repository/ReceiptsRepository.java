@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository
-public class ReceiptsRepository implements FileRepository<Receipt> {
+public class ReceiptsRepository implements BaseRepository<Receipt> {
     private final String filePath;
     private final ObjectMapper objectMapper;
     private List<Receipt> receipts;
@@ -28,29 +28,65 @@ public class ReceiptsRepository implements FileRepository<Receipt> {
     }
 
     private List<Receipt> loadFromFile() {
-        File file = new File(filePath);
+        File file = JsonFileUtils.resolve(filePath);
         if (!file.exists() || file.length() == 0) return new ArrayList<>();
-        try { return objectMapper.readValue(file, new TypeReference<List<Receipt>>() {}); }
-        catch (IOException e) { throw new RuntimeException("Error reading receipts from JSON file", e); }
+        try {
+            return objectMapper.readValue(file, new TypeReference<List<Receipt>>() {});
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading receipts from JSON file", e);
+        }
     }
 
-    private Long getNextId() { return receipts.stream().map(Receipt::getId).max(Long::compareTo).orElse(0L) + 1; }
-    @Override public List<Receipt> getAll() { return new ArrayList<>(receipts); }
+    private void saveAll() {
+        try {
+            File file = JsonFileUtils.resolve(filePath);
+            if (file.getParentFile() != null) file.getParentFile().mkdirs();
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, receipts);
+        } catch (IOException e) {
+            throw new RuntimeException("Error saving receipts to JSON file", e);
+        }
+    }
+
+    private Long getNextId() {
+        return receipts.stream().map(Receipt::getId).mapToLong(Long::longValue).max().orElse(0L) + 1;
+    }
 
     @Override
-    public void SaveAll(List<Receipt> items) {
-        this.receipts = new ArrayList<>(items);
-        try {
-            File file = new File(filePath);
-            if (file.getParentFile() != null) file.getParentFile().mkdirs();
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, this.receipts);
-        } catch (IOException e) { throw new RuntimeException("Error saving receipts to JSON file", e); }
+    public Receipt save(Receipt entity) {
+        if (entity.getId() == null) entity.setId(getNextId());
+        for (int i = 0; i < receipts.size(); i++) {
+            if (receipts.get(i).getId().equals(entity.getId())) {
+                receipts.set(i, entity);
+                saveAll();
+                return entity;
+            }
+        }
+        receipts.add(entity);
+        saveAll();
+        return entity;
     }
 
-    @Override public void add(Receipt item) { if (item.getId() == null) item.setId(getNextId()); receipts.add(item); SaveAll(receipts); }
-    @Override public void update(Receipt item) { for (int i=0;i<receipts.size();i++) { if (receipts.get(i).getId().equals(item.getId())) { receipts.set(i,item); SaveAll(receipts); return; } } throw new RuntimeException("Receipt not found"); }
-    @Override public void delete(Long id) { boolean removed=receipts.removeIf(receipt -> receipt.getId().equals(id)); if(!removed) throw new RuntimeException("Receipt not found"); SaveAll(receipts); }
-    @Override public Receipt findById(Long id) { return receipts.stream().filter(receipt -> receipt.getId().equals(id)).findFirst().orElse(null); }
-    public Receipt findByPaymentId(Long paymentId) { return receipts.stream().filter(receipt -> receipt.getPaymentId().equals(paymentId)).findFirst().orElse(null); }
-    @Override public List<String> getAllInformation() { return receipts.stream().map(Receipt::toString).toList(); }
+    @Override
+    public Receipt findById(Long id) {
+        if (id == null) return null;
+        return receipts.stream().filter(r -> r.getId().equals(id)).findFirst().orElse(null);
+    }
+
+    @Override
+    public List<Receipt> findAll() {
+        return new ArrayList<>(receipts);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        boolean removed = receipts.removeIf(r -> r.getId().equals(id));
+        if (!removed) throw new RuntimeException("Receipt not found");
+        saveAll();
+    }
+
+    public Receipt findByPaymentId(Long paymentId) {
+        return receipts.stream().filter(r -> r.getPaymentId().equals(paymentId)).findFirst().orElse(null);
+    }
 }
+
+
