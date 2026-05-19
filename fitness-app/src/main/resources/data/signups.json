@@ -1,1 +1,7 @@
-﻿[]
+[ {
+  "id" : 1,
+  "courseId" : 1,
+  "memberId" : 1,
+  "bookingTime" : [ 2026, 5, 19, 14, 48, 6, 180363000 ],
+  "attended" : false
+} ]

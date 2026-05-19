@@ -1,1 +1,7 @@
-﻿[]
+[ {
+  "id" : 1,
+  "courseId" : 1,
+  "memberId" : 1,
+  "signUpId" : 1,
+  "position" : 1
+} ]

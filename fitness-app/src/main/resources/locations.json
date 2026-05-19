@@ -1,0 +1,24 @@
+[ {
+  "id" : 1,
+  "name" : "Centru",
+  "address" : "Str. Principală Nr. 1",
+  "zones" : [ {
+    "id" : 101,
+    "name" : "Sala Cursuri",
+    "maxCapacity" : 15
+  }, {
+    "id" : 102,
+    "name" : "Fitness Liber",
+    "maxCapacity" : 50
+  } ]
+}, {
+  "id" : 2,
+  "name" : "Nord",
+  "address" : "Bld. Nordului Nr. 10",
+  "zones" : [ ]
+}, {
+  "id" : 3,
+  "name" : "Vest",
+  "address" : "Str. Apusului Nr. 5",
+  "zones" : [ ]
+} ]

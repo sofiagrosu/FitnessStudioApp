@@ -1,1 +1,11 @@
-﻿[]
+[ {
+  "id" : 1,
+  "firstName" : "Bianca",
+  "lastName" : "Ioana",
+  "email" : "bholobica@gmail.com",
+  "password" : "ioanaioana",
+  "phone" : "0751466088",
+  "qrCode" : "MEM-1CF80F93",
+  "active" : true,
+  "role" : "MEMBER"
+} ]
