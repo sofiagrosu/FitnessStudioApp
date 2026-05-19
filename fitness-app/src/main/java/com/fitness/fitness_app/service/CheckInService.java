@@ -9,7 +9,7 @@ import com.fitness.fitness_app.model.Location;
 import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.model.Zone;
 import com.fitness.fitness_app.repository.CheckInsRepository;
-import com.fitness.fitness_app.repository.FileLocationRepository;
+import com.fitness.fitness_app.repository.LocationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,12 +20,12 @@ public class CheckInService {
     private final CheckInsRepository checkInsRepository;
     private final MemberService memberService;
     private final SubscriptionService subscriptionService;
-    private final FileLocationRepository locationRepository;
+    private final LocationRepository locationRepository;
 
     public CheckInService(CheckInsRepository checkInsRepository,
                           MemberService memberService,
                           SubscriptionService subscriptionService,
-                          FileLocationRepository locationRepository) {
+                          LocationRepository locationRepository) {
         this.checkInsRepository = checkInsRepository;
         this.memberService = memberService;
         this.subscriptionService = subscriptionService;
@@ -106,10 +106,12 @@ public class CheckInService {
         return location;
     }
 
-    private Location validateLocation(Long locationId) {
-        if (locationId == null) throw new ValidationException("Location id is required");
-        Location location = locationRepository.findById(locationId);
-        if (location == null) throw new NotFoundException("Location not found");
-        return location;
+   private Location validateLocation(Long locationId) {
+    if (locationId == null) {
+        throw new ValidationException("Location id is required");
     }
+
+    return locationRepository.findById(locationId)
+            .orElseThrow(() -> new NotFoundException("Location not found"));
+}
 }

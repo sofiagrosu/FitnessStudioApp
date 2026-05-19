@@ -11,11 +11,12 @@ import com.fitness.fitness_app.model.Location;
 import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.model.SignUp;
 import com.fitness.fitness_app.model.Trainer;
+import com.fitness.fitness_app.model.User;
 import com.fitness.fitness_app.model.UserI;
 import com.fitness.fitness_app.model.WaitlistEntry;
 import com.fitness.fitness_app.repository.CoursesRepository;
-import com.fitness.fitness_app.repository.FileLocationRepository;
-import com.fitness.fitness_app.repository.FileUserRepository;
+import com.fitness.fitness_app.repository.LocationRepository;
+import com.fitness.fitness_app.repository.UserRepository;
 import com.fitness.fitness_app.repository.SignUpsRepository;
 import com.fitness.fitness_app.repository.WaitlistsRepository;
 import org.springframework.stereotype.Service;
@@ -29,15 +30,15 @@ public class CoursesService {
     private final CoursesRepository coursesRepository;
     private final WaitlistsRepository waitlistsRepository;
     private final SignUpsRepository signUpsRepository;
-    private final FileUserRepository userRepository;
-    private final FileLocationRepository locationRepository;
+    private final UserRepository userRepository;
+    private final LocationRepository locationRepository;
     private final MemberService memberService;
 
     public CoursesService(CoursesRepository coursesRepository,
                           WaitlistsRepository waitlistsRepository,
                           SignUpsRepository signUpsRepository,
-                          FileUserRepository userRepository,
-                          FileLocationRepository locationRepository,
+                          UserRepository userRepository,
+                          LocationRepository locationRepository,
                           MemberService memberService) {
         this.coursesRepository = coursesRepository;
         this.waitlistsRepository = waitlistsRepository;
@@ -361,19 +362,28 @@ public class CoursesService {
         if (course.getLocationId() == null) throw new ValidationException("Location id is required");
     }
 
-    private void validateTrainerExists(Long trainerId) {
-        if (trainerId == null) throw new ValidationException("Trainer id is required");
-        UserI user = userRepository.findById(trainerId);
-        if (!(user instanceof Trainer) || !user.isActive()) {
-            throw new NotFoundException("Trainer not found or inactive");
-        }
+  private void validateTrainerExists(Long trainerId) {
+    if (trainerId == null) {
+        throw new ValidationException("Trainer id is required");
     }
 
-    private void validateLocationExists(Long locationId) {
-        if (locationId == null) throw new ValidationException("Location id is required");
-        Location location = locationRepository.findById(locationId);
-        if (location == null) throw new NotFoundException("Location not found");
+    User user = userRepository.findById(trainerId)
+            .orElseThrow(() ->
+                    new NotFoundException("Trainer not found"));
+
+    if (!(user instanceof Trainer trainer) || !trainer.isActive()) {
+        throw new NotFoundException("Trainer not found or inactive");
     }
+}
+private void validateLocationExists(Long locationId) {
+    if (locationId == null) {
+        throw new ValidationException("Location id is required");
+    }
+
+    locationRepository.findById(locationId)
+            .orElseThrow(() ->
+                    new NotFoundException("Location not found"));
+}
 
     private void validateMemberExists(Long memberId) {
         if (memberId == null) throw new ValidationException("Member id is required");
