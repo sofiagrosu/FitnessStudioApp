@@ -1,5 +1,6 @@
 package com.fitness.fitness_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -46,6 +47,7 @@ public class Zone {
         this.maxCapacity = maxCapacity;
     }
 
+    @JsonIgnore
     public Location getLocation() {
         return location;
     }
