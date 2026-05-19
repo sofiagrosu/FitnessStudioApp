@@ -42,7 +42,8 @@ public class FileUserRepository implements BaseRepository<UserI> {
         try {
             File file = JsonFileUtils.resolve(filePath);
             if (file.getParentFile() != null) file.getParentFile().mkdirs();
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, users);
+            var listType = objectMapper.getTypeFactory().constructCollectionType(List.class, UserI.class);
+            objectMapper.writerWithDefaultPrettyPrinter().forType(listType).writeValue(file, users);
         } catch (IOException e) {
             throw new RuntimeException("Error saving users to JSON file", e);
         }
