@@ -1,12 +1,14 @@
 package com.fitness.fitness_app.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fitness.fitness_app.model.enums.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @Entity
 @Table(name="members")
 public class Member extends User {

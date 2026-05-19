@@ -12,8 +12,11 @@ function Login() {
     setError("");
 
     try {
-      await loginUser(form.email, form.password);
-      navigate("/dashboard");
+      const user = await loginUser(form.email, form.password);
+      if (user.role === "TRAINER")            navigate("/trainer/dashboard");
+      else if (user.role === "ADMIN")         navigate("/admin/dashboard");
+      else if (user.role === "RECEPTIONIST")  navigate("/receptionist/dashboard");
+      else                                    navigate("/dashboard");
     } catch {
       setError("Login failed. Check email and password.");
     }
