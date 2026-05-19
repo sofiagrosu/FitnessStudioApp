@@ -1,41 +1,69 @@
 package com.fitness.fitness_app.model;
 
-import java.io.Serializable;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Location implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Entity
+@Table(name = "locations")
+public class Location {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
+
     private String address;
-    private List<Zone> zones;
 
-    public Location() {
-        this.zones = new ArrayList<>();
-    }
+    @OneToMany(mappedBy = "location",
+               cascade = CascadeType.ALL,
+               orphanRemoval = true)
+    private List<Zone> zones = new ArrayList<>();
 
-    public Location(Long id, String name, String address) {
-        this.id = id;
+
+    public Location() {}
+
+    public Location(String name, String address) {
         this.name = name;
         this.address = address;
-        this.zones = new ArrayList<>();
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getName() {
+        return name;
+    }
 
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public List<Zone> getZones() { return zones; }
-    public void setZones(List<Zone> zones) { this.zones = zones; }
+    public String getAddress() {
+        return address;
+    }
 
-    public void addZone(Zone zone) { this.zones.add(zone); }
+    public void setAddress(String address) {
+        this.address = address;
+    }
 
-    @Override public String toString() { return "Locatia " + name + " (" + address + ")"; }
+    public List<Zone> getZones() {
+        return zones;
+    }
+
+    public void setZones(List<Zone> zones) {
+        this.zones = zones;
+    }
+
+    public void addZone(Zone zone) {
+        zones.add(zone);
+        zone.setLocation(this);
+    }
+
+    @Override
+    public String toString() {
+        return "Locatia " + name + " (" + address + ")";
+    }
 }

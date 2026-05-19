@@ -1,30 +1,61 @@
 package com.fitness.fitness_app.model;
 
-import java.io.Serializable;
+import jakarta.persistence.*;
 
-public class Zone implements Serializable {
-    private static final long serialVersionUID = 1L;
+@Entity
+@Table(name = "zones")
+public class Zone {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     private String name;
+
     private int maxCapacity;
+
+    @ManyToOne
+    @JoinColumn(name = "location_id")
+    private Location location;
+
 
     public Zone() {}
 
-    public Zone(Long id, String name, int maxCapacity) {
-        this.id = id;
+    public Zone(String name, int maxCapacity) {
         this.name = name;
         this.maxCapacity = maxCapacity;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getName() {
+        return name;
+    }
 
-    public int getMaxCapacity() { return maxCapacity; }
-    public void setMaxCapacity(int maxCapacity) { this.maxCapacity = maxCapacity; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    @Override public String toString() { return "Zona: " + name + " (Capacitate: " + maxCapacity + ")"; }
+    public int getMaxCapacity() {
+        return maxCapacity;
+    }
+
+    public void setMaxCapacity(int maxCapacity) {
+        this.maxCapacity = maxCapacity;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
+    @Override
+    public String toString() {
+        return "Zona: " + name + " (Capacitate: " + maxCapacity + ")";
+    }
 }
