@@ -39,6 +39,12 @@ public class AdminService {
         if (newUser.getPassword() == null || newUser.getPassword().isBlank())
             throw new ValidationException("Password is required");
 
+        if (userToSave.getFirstName() == null || userToSave.getFirstName().isBlank())
+            throw new ValidationException("First name is required");
+
+        if (userToSave.getLastName() == null || userToSave.getLastName().isBlank())
+            throw new ValidationException("Last name is required");
+
         User existing = userRepo.findByEmailIgnoreCase(newUser.getEmail());
 
         if (existing != null) {

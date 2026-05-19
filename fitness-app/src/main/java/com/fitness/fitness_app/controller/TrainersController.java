@@ -43,9 +43,4 @@ public class TrainersController {
         trainerService.deactivateTrainer(trainerId);
         return ResponseEntity.ok("Trainer deactivated successfully");
     }
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<String> handleRuntimeException(RuntimeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
 }

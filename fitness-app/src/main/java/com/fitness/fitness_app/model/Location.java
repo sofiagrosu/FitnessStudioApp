@@ -1,6 +1,7 @@
 package com.fitness.fitness_app.model;
 
 import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +19,8 @@ public class Location {
 
     @OneToMany(mappedBy = "location",
                cascade = CascadeType.ALL,
-               orphanRemoval = true)
+               orphanRemoval = true,
+               fetch = FetchType.EAGER)
     private List<Zone> zones = new ArrayList<>();
 
 

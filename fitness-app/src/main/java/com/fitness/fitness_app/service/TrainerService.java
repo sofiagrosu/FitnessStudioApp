@@ -56,6 +56,18 @@ public class TrainerService {
             throw new ValidationException("Trainer data is required");
         }
 
+        if (updatedTrainer.getFirstName() == null || updatedTrainer.getFirstName().isBlank()) {
+            throw new ValidationException("First name is required");
+        }
+
+        if (updatedTrainer.getLastName() == null || updatedTrainer.getLastName().isBlank()) {
+            throw new ValidationException("Last name is required");
+        }
+
+        if (updatedTrainer.getEmail() == null || updatedTrainer.getEmail().isBlank()) {
+            throw new ValidationException("Email is required");
+        }
+
         existingTrainer.setFirstName(updatedTrainer.getFirstName());
         existingTrainer.setLastName(updatedTrainer.getLastName());
         existingTrainer.setEmail(updatedTrainer.getEmail());
