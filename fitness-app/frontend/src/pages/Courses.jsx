@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
-import { getCourses, joinCourse } from "../services/courseService";
+import { getCourses, joinCourse, getMemberCourses, getCourseSignups, getCourseWaitlist, leaveCourse } from "../services/courseService";
 import { getCurrentUser } from "../services/authService";
 import { Clock, MapPin, User, CalendarDays } from "lucide-react";
 
@@ -50,12 +50,21 @@ const demoCourses = [
 ];
 
 function Courses() {
-  const [courses, setCourses] = useState([]);
-  const [message, setMessage] = useState("");
+  const [courses, setCourses]             = useState([]);
+  const [enrolledIds, setEnrolledIds]     = useState(new Set());
+  const [message, setMessage]             = useState("");
+  const [loadingId, setLoadingId]         = useState(null); // courseId being processed
+
+  const user = getCurrentUser();
 
   useEffect(() => {
-    loadCourses();
+    loadAll();
   }, []);
+
+  async function loadAll() {
+    await loadCourses();
+    if (user) await loadEnrolled();
+  }
 
   async function loadCourses() {
     try {
@@ -77,19 +86,70 @@ function Courses() {
     }
   }
 
-  async function handleJoin(courseId) {
-    const user = getCurrentUser();
+  async function loadEnrolled() {
+    try {
+      const res = await getMemberCourses(user.id);
+      const ids = new Set(res.data.map((c) => c.id));
+      setEnrolledIds(ids);
+    } catch {
+      setEnrolledIds(new Set());
+    }
+  }
 
+  async function handleJoin(courseId) {
     if (!user) {
       setMessage("You must be logged in to join a class.");
       return;
     }
 
+    setLoadingId(courseId);
+    setMessage("");
     try {
       await joinCourse(courseId, user.id);
-      setMessage("Successfully joined class.");
+      setMessage("Successfully joined class!");
+      // Reload both courses (counter update) and enrolled list
+      await loadCourses();
+      await loadEnrolled();
     } catch {
-      setMessage("Could not join class. It may be full or already joined.");
+      setMessage("Could not join class. It may be full or you are already signed up.");
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  async function handleLeave(courseId) {
+    if (!user) return;
+
+    setLoadingId(courseId);
+    setMessage("");
+    try {
+      // 1. Look in enrolled signups first
+      const signupsRes = await getCourseSignups(courseId);
+      let mySignUp = signupsRes.data.find((s) => s.member?.id === user.id);
+
+      // 2. If not enrolled, look in waitlist (waitlisted members also have a SignUp)
+      if (!mySignUp) {
+        const waitlistRes = await getCourseWaitlist(courseId);
+        const myWaitlistEntry = waitlistRes.data.find((e) => e.member?.id === user.id);
+        if (myWaitlistEntry?.signUp) {
+          mySignUp = myWaitlistEntry.signUp;
+        }
+      }
+
+      if (!mySignUp) {
+        setMessage("Could not find your sign-up. Please refresh and try again.");
+        return;
+      }
+
+      await leaveCourse(mySignUp.id, user.id);
+      setMessage("Successfully left the class.");
+      // Reload both courses (counter update) and enrolled list
+      await loadCourses();
+      await loadEnrolled();
+    } catch {
+      setMessage("Could not leave class. Please try again.");
+    } finally {
+      setLoadingId(null);
     }
   }
 
@@ -110,6 +170,9 @@ function Courses() {
             const percent = Math.round(
               ((course.currentOccupancy || 0) / course.maxCapacity) * 100
             );
+            const isEnrolled = enrolledIds.has(course.id);
+            const isLoading  = loadingId === course.id;
+            const isFull     = percent >= 100;
 
             return (
               <div className="course-card card" key={course.id}>
@@ -123,7 +186,9 @@ function Courses() {
                       <h3>{course.name}</h3>
                       <p>{course.type}</p>
                     </div>
-                    <span className="tag">{percent >= 100 ? "Full" : "Available"}</span>
+                    <span className="tag">
+                      {isEnrolled ? "Enrolled" : isFull ? "Full" : "Available"}
+                    </span>
                   </div>
 
                   <div className="course-info">
@@ -140,13 +205,28 @@ function Courses() {
                       <span>{percent}% full</span>
                     </div>
                     <div className="progress">
-                      <div style={{ width: `${percent}%` }} />
+                      <div style={{ width: `${Math.min(percent, 100)}%` }} />
                     </div>
                   </div>
 
-                  <button className="primary-btn course-btn" onClick={() => handleJoin(course.id)}>
-                    {percent >= 100 ? "Join waitlist" : "Join class"}
-                  </button>
+                  {isEnrolled ? (
+                    <button
+                      className="primary-btn course-btn"
+                      onClick={() => handleLeave(course.id)}
+                      disabled={isLoading}
+                      style={{ background: "#e74c3c" }}
+                    >
+                      {isLoading ? "Processing..." : "Leave class"}
+                    </button>
+                  ) : (
+                    <button
+                      className="primary-btn course-btn"
+                      onClick={() => handleJoin(course.id)}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Processing..." : isFull ? "Join waitlist" : "Join class"}
+                    </button>
+                  )}
                 </div>
               </div>
             );

@@ -5,3 +5,6 @@ export const getActiveSubscription = (memberId) =>
 
 export const createSubscription = (memberId, type, price) =>
   api.post("/subscriptions", { memberId, type, price });
+
+export const cancelSubscription = (subscriptionId) =>
+  api.put(`/subscriptions/${subscriptionId}/suspend`);
