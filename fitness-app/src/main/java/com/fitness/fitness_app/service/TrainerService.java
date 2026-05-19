@@ -1,16 +1,20 @@
 package com.fitness.fitness_app.service;
 
+import com.fitness.fitness_app.exception.ConflictException;
+import com.fitness.fitness_app.exception.NotFoundException;
+import com.fitness.fitness_app.exception.ValidationException;
 import com.fitness.fitness_app.model.Trainer;
-import com.fitness.fitness_app.repository.TrainersRepository;
+import com.fitness.fitness_app.repository.TrainerRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class TrainerService {
-    private final TrainersRepository trainersRepository;
 
-    public TrainerService(TrainersRepository trainersRepository) {
+    private final TrainerRepository trainersRepository;
+
+    public TrainerService(TrainerRepository trainersRepository) {
         this.trainersRepository = trainersRepository;
     }
 
@@ -19,35 +23,56 @@ public class TrainerService {
     }
 
     public Trainer getTrainerById(Long trainerId) {
-        Trainer trainer = trainersRepository.findById(trainerId);
-        if (trainer == null) {
-            throw new RuntimeException("Trainer not found");
+        if (trainerId == null) {
+            throw new ValidationException("Trainer id is required");
         }
-        return trainer;
+
+        return trainersRepository.findById(trainerId)
+                .orElseThrow(() -> new NotFoundException("Trainer not found"));
     }
 
     public Trainer createTrainer(Trainer trainer) {
         if (trainer == null) {
-            throw new RuntimeException("Trainer data is required");
+            throw new ValidationException("Trainer data is required");
         }
+
         if (trainer.getEmail() == null || trainer.getEmail().isBlank()) {
-            throw new RuntimeException("Trainer email is required");
+            throw new ValidationException("Trainer email is required");
         }
-        if (trainersRepository.findByEmail(trainer.getEmail()) != null) {
-            throw new RuntimeException("Trainer email already exists");
+
+        if (trainersRepository.findByEmailIgnoreCase(trainer.getEmail()) != null) {
+            throw new ConflictException("Trainer email already exists");
         }
-        trainersRepository.save(trainer);
-        return trainer;
+
+        trainer.setActive(true);
+
+        return trainersRepository.save(trainer);
     }
 
     public Trainer updateTrainer(Long trainerId, Trainer updatedTrainer) {
         Trainer existingTrainer = getTrainerById(trainerId);
-        updatedTrainer.setId(existingTrainer.getId());
-        trainersRepository.save(updatedTrainer);
-        return updatedTrainer;
+
+        if (updatedTrainer == null) {
+            throw new ValidationException("Trainer data is required");
+        }
+
+        existingTrainer.setFirstName(updatedTrainer.getFirstName());
+        existingTrainer.setLastName(updatedTrainer.getLastName());
+        existingTrainer.setEmail(updatedTrainer.getEmail());
+
+        if (updatedTrainer.getPassword() != null
+                && !updatedTrainer.getPassword().isBlank()) {
+            existingTrainer.setPassword(updatedTrainer.getPassword());
+        }
+
+        return trainersRepository.save(existingTrainer);
     }
 
     public void deactivateTrainer(Long trainerId) {
-        trainersRepository.deleteById(trainerId);
+        Trainer trainer = getTrainerById(trainerId);
+
+        trainer.setActive(false);
+
+        trainersRepository.save(trainer);
     }
 }

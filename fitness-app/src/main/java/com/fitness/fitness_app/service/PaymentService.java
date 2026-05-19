@@ -3,6 +3,7 @@ package com.fitness.fitness_app.service;
 import com.fitness.fitness_app.exception.ForbiddenException;
 import com.fitness.fitness_app.exception.NotFoundException;
 import com.fitness.fitness_app.exception.ValidationException;
+import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.model.Payment;
 import com.fitness.fitness_app.model.Receipt;
 import com.fitness.fitness_app.model.Subscription;
@@ -37,35 +38,47 @@ public class PaymentService {
         if (amount == null || amount <= 0) throw new ValidationException("Amount must be greater than 0");
         if (method == null) throw new ValidationException("Payment method is required");
 
+        Member member = memberService.getMemberById(memberId);
         Subscription subscription = subscriptionService.getSubscriptionById(subscriptionId);
+
         if (!subscription.getMemberId().equals(memberId)) {
             throw new ForbiddenException("Subscription does not belong to this member");
         }
 
-        Payment payment = new Payment(null, memberId, subscriptionId, amount, method, LocalDateTime.now());
-        paymentsRepository.save(payment);
+        Payment payment = new Payment(member, subscription, amount, method, LocalDateTime.now());
+        Payment savedPayment = paymentsRepository.save(payment);
+
         subscriptionService.markAsPaid(subscriptionId);
-        createReceipt(payment);
-        return payment;
+        createReceipt(savedPayment);
+
+        return savedPayment;
     }
 
     public Receipt createReceipt(Payment payment) {
         String receiptNumber = "REC-" + payment.getId() + "-" + LocalDateTime.now().getYear();
-        Receipt receipt = new Receipt(null, payment.getId(), receiptNumber, LocalDateTime.now());
-        receiptsRepository.save(receipt);
-        return receipt;
+
+        Receipt receipt = new Receipt(payment, receiptNumber, LocalDateTime.now());
+
+        return receiptsRepository.save(receipt);
     }
 
     public List<Payment> getPaymentsForMember(Long memberId) {
         if (memberId == null) throw new ValidationException("Member id is required");
-        memberService.getMemberById(memberId); // throws NotFoundException if member doesn't exist
-        return paymentsRepository.findByMemberId(memberId);
+
+        memberService.getMemberById(memberId);
+
+        return paymentsRepository.findByMember_Id(memberId);
     }
 
     public Receipt getReceiptForPayment(Long paymentId) {
         if (paymentId == null) throw new ValidationException("Payment id is required");
-        Receipt receipt = receiptsRepository.findByPaymentId(paymentId);
-        if (receipt == null) throw new NotFoundException("Receipt not found for this payment");
+
+        Receipt receipt = receiptsRepository.findByPayment_Id(paymentId);
+
+        if (receipt == null) {
+            throw new NotFoundException("Receipt not found for this payment");
+        }
+
         return receipt;
     }
 }

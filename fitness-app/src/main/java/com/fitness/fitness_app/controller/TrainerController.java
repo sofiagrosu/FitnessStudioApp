@@ -88,7 +88,16 @@ public class TrainerController {
 
     private void validateCourseOwnedByTrainer(Long trainerId, Long courseId) {
         Course course = coursesService.getCourseById(courseId);
-        if (!course.getTrainerId().equals(trainerId)) {
+        Long courseTrainerId = null;
+        try {
+            if (course.getTrainer() != null) {
+                courseTrainerId = course.getTrainer().getId();
+            }
+        } catch (NoSuchMethodError | NullPointerException ignored) {
+            // fallback in case Course model differs; keep courseTrainerId null
+        }
+
+        if (courseTrainerId == null || !courseTrainerId.equals(trainerId)) {
             throw new com.fitness.fitness_app.exception.ForbiddenException(
                     "This course does not belong to the specified trainer");
         }

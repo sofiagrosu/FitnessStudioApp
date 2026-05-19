@@ -4,7 +4,7 @@ import com.fitness.fitness_app.exception.ConflictException;
 import com.fitness.fitness_app.exception.NotFoundException;
 import com.fitness.fitness_app.exception.ValidationException;
 import com.fitness.fitness_app.model.Member;
-import com.fitness.fitness_app.repository.MembersRepository;
+import com.fitness.fitness_app.repository.MemberRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,54 +12,73 @@ import java.util.UUID;
 
 @Service
 public class MemberService {
-    private final MembersRepository membersRepository;
+    private final MemberRepository membersRepository;
 
-    public MemberService(MembersRepository membersRepository) {
+    public MemberService(MemberRepository membersRepository) {
         this.membersRepository = membersRepository;
     }
 
     public Member registerMember(Member member) {
         validateMember(member);
-        if (membersRepository.findByEmail(member.getEmail()) != null) {
+
+        if (membersRepository.findByEmailIgnoreCase(member.getEmail()) != null) {
             throw new ConflictException("A member with this email already exists");
         }
+
         if (member.getQrCode() == null || member.getQrCode().isBlank()) {
             member.setQrCode(generateUniqueQrCode());
         }
+
         member.setActive(true);
-        membersRepository.save(member);
-        return member;
+        return membersRepository.save(member);
     }
 
     public Member updateMember(Long memberId, Member updatedMember) {
         Member existingMember = getMemberById(memberId);
-        if (updatedMember.getFirstName() == null || updatedMember.getFirstName().isBlank())
-            throw new ValidationException("First name is required");
-        if (updatedMember.getLastName() == null || updatedMember.getLastName().isBlank())
-            throw new ValidationException("Last name is required");
-        if (updatedMember.getEmail() == null || updatedMember.getEmail().isBlank())
-            throw new ValidationException("Email is required");
-        if (!updatedMember.getEmail().equalsIgnoreCase(existingMember.getEmail())) {
-            if (membersRepository.findByEmail(updatedMember.getEmail()) != null)
-                throw new ConflictException("Email already used by another member");
+
+        if (updatedMember == null) {
+            throw new ValidationException("Member data is required");
         }
+
+        if (updatedMember.getFirstName() == null || updatedMember.getFirstName().isBlank()) {
+            throw new ValidationException("First name is required");
+        }
+
+        if (updatedMember.getLastName() == null || updatedMember.getLastName().isBlank()) {
+            throw new ValidationException("Last name is required");
+        }
+
+        if (updatedMember.getEmail() == null || updatedMember.getEmail().isBlank()) {
+            throw new ValidationException("Email is required");
+        }
+
+        if (!updatedMember.getEmail().equalsIgnoreCase(existingMember.getEmail())) {
+            if (membersRepository.findByEmailIgnoreCase(updatedMember.getEmail()) != null) {
+                throw new ConflictException("Email already used by another member");
+            }
+        }
+
         existingMember.setFirstName(updatedMember.getFirstName());
         existingMember.setLastName(updatedMember.getLastName());
         existingMember.setEmail(updatedMember.getEmail());
         existingMember.setPhone(updatedMember.getPhone());
-        membersRepository.save(existingMember);
-        return existingMember;
+
+        return membersRepository.save(existingMember);
     }
 
     public Member changePassword(Long memberId, String oldPassword, String newPassword) {
         Member member = getMemberById(memberId);
-        if (member.getPassword() == null || !member.getPassword().equals(oldPassword))
+
+        if (member.getPassword() == null || !member.getPassword().equals(oldPassword)) {
             throw new ValidationException("Current password is incorrect");
-        if (newPassword == null || newPassword.isBlank())
+        }
+
+        if (newPassword == null || newPassword.isBlank()) {
             throw new ValidationException("New password is required");
+        }
+
         member.setPassword(newPassword);
-        membersRepository.save(member);
-        return member;
+        return membersRepository.save(member);
     }
 
     public List<Member> getAllMembers() {
@@ -67,37 +86,53 @@ public class MemberService {
     }
 
     public Member getMemberById(Long memberId) {
-        if (memberId == null) throw new ValidationException("Member id is required");
-        Member member = membersRepository.findById(memberId);
-        if (member == null) throw new NotFoundException("Member not found");
-        return member;
+        if (memberId == null) {
+            throw new ValidationException("Member id is required");
+        }
+
+        return membersRepository.findById(memberId)
+                .orElseThrow(() -> new NotFoundException("Member not found"));
     }
 
     public Member findByEmail(String email) {
-        return membersRepository.findByEmail(email);
+        return membersRepository.findByEmailIgnoreCase(email);
     }
 
     public Member findByQrCode(String qrCode) {
         Member member = membersRepository.findByQrCode(qrCode);
-        if (member == null) throw new NotFoundException("No member found for this QR code");
+
+        if (member == null) {
+            throw new NotFoundException("No member found for this QR code");
+        }
+
         return member;
     }
 
     public String generateUniqueQrCode() {
         String qrCode;
+
         do {
             qrCode = "MEM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         } while (membersRepository.findByQrCode(qrCode) != null);
+
         return qrCode;
     }
 
     private void validateMember(Member member) {
-        if (member == null) throw new ValidationException("Member data is required");
-        if (member.getFirstName() == null || member.getFirstName().isBlank())
+        if (member == null) {
+            throw new ValidationException("Member data is required");
+        }
+
+        if (member.getFirstName() == null || member.getFirstName().isBlank()) {
             throw new ValidationException("First name is required");
-        if (member.getLastName() == null || member.getLastName().isBlank())
+        }
+
+        if (member.getLastName() == null || member.getLastName().isBlank()) {
             throw new ValidationException("Last name is required");
-        if (member.getEmail() == null || member.getEmail().isBlank())
+        }
+
+        if (member.getEmail() == null || member.getEmail().isBlank()) {
             throw new ValidationException("Email is required");
+        }
     }
 }

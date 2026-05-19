@@ -4,20 +4,8 @@ import com.fitness.fitness_app.exception.ConflictException;
 import com.fitness.fitness_app.exception.ForbiddenException;
 import com.fitness.fitness_app.exception.NotFoundException;
 import com.fitness.fitness_app.exception.ValidationException;
-import com.fitness.fitness_app.model.Course;
-import com.fitness.fitness_app.model.CourseType;
-import com.fitness.fitness_app.model.DayOfWeek;
-import com.fitness.fitness_app.model.Location;
-import com.fitness.fitness_app.model.Member;
-import com.fitness.fitness_app.model.SignUp;
-import com.fitness.fitness_app.model.Trainer;
-import com.fitness.fitness_app.model.UserI;
-import com.fitness.fitness_app.model.WaitlistEntry;
-import com.fitness.fitness_app.repository.CoursesRepository;
-import com.fitness.fitness_app.repository.FileLocationRepository;
-import com.fitness.fitness_app.repository.FileUserRepository;
-import com.fitness.fitness_app.repository.SignUpsRepository;
-import com.fitness.fitness_app.repository.WaitlistsRepository;
+import com.fitness.fitness_app.model.*;
+import com.fitness.fitness_app.repository.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,15 +17,15 @@ public class CoursesService {
     private final CoursesRepository coursesRepository;
     private final WaitlistsRepository waitlistsRepository;
     private final SignUpsRepository signUpsRepository;
-    private final FileUserRepository userRepository;
-    private final FileLocationRepository locationRepository;
+    private final UserRepository userRepository;
+    private final LocationRepository locationRepository;
     private final MemberService memberService;
 
     public CoursesService(CoursesRepository coursesRepository,
                           WaitlistsRepository waitlistsRepository,
                           SignUpsRepository signUpsRepository,
-                          FileUserRepository userRepository,
-                          FileLocationRepository locationRepository,
+                          UserRepository userRepository,
+                          LocationRepository locationRepository,
                           MemberService memberService) {
         this.coursesRepository = coursesRepository;
         this.waitlistsRepository = waitlistsRepository;
@@ -51,10 +39,10 @@ public class CoursesService {
         if (signUpId == null) throw new ValidationException("Sign-up id is required");
         if (requestingMemberId == null) throw new ValidationException("Member id is required");
 
-        SignUp signUp = signUpsRepository.findById(signUpId);
-        if (signUp == null) throw new NotFoundException("Sign-up not found");
+        SignUp signUp = signUpsRepository.findById(signUpId)
+                .orElseThrow(() -> new NotFoundException("Sign-up not found"));
 
-        if (!Long.valueOf(signUp.getMemberId()).equals(requestingMemberId)) {
+        if (!signUp.getMemberId().equals(requestingMemberId)) {
             throw new ForbiddenException("You can only cancel your own sign-ups");
         }
 
@@ -71,28 +59,26 @@ public class CoursesService {
     }
 
     private void updateWaitlist(SignUp cancelledSignUp) {
-        WaitlistEntry cancelledWaitlistEntry = waitlistsRepository.findBySignUpId(cancelledSignUp.getId());
+        WaitlistEntry cancelledWaitlistEntry = waitlistsRepository.findBySignUp_Id(cancelledSignUp.getId());
 
-        // Case 1: inscriere anulata era pe waitlist — se sterge si se recalculeaza pozitiile
         if (cancelledWaitlistEntry != null) {
             waitlistsRepository.deleteById(cancelledWaitlistEntry.getId());
             signUpsRepository.deleteById(cancelledSignUp.getId());
             return;
         }
 
-        // Case 2: inscriere anulata era activa (enrolled) — elibereaza locul
-        Course course = coursesRepository.findById(cancelledSignUp.getCourseId());
-        if (course == null) throw new NotFoundException("Course not found");
+        Course course = getCourseById(cancelledSignUp.getCourseId());
 
         signUpsRepository.deleteById(cancelledSignUp.getId());
         course.setCurrentOccupancy(Math.max(0, safeInt(course.getCurrentOccupancy()) - 1));
 
-        // Promoveaza primul de pe waitlist (daca exista)
-        List<WaitlistEntry> waitlistEntries = waitlistsRepository.findByCourseId(course.getId());
+        List<WaitlistEntry> waitlistEntries = waitlistsRepository.findByCourse_IdOrderByPositionAsc(course.getId());
+
         if (!waitlistEntries.isEmpty()) {
             WaitlistEntry firstWaitlistEntry = waitlistEntries.stream()
                     .min(Comparator.comparing(WaitlistEntry::getPosition))
                     .orElseThrow();
+
             waitlistsRepository.deleteById(firstWaitlistEntry.getId());
             course.setCurrentOccupancy(safeInt(course.getCurrentOccupancy()) + 1);
         }
@@ -102,28 +88,33 @@ public class CoursesService {
 
     public String setMemberAttendance(Long signUpId, boolean attended) {
         if (signUpId == null) throw new ValidationException("Sign-up id is required");
-        SignUp signUp = signUpsRepository.findById(signUpId);
-        if (signUp == null) throw new NotFoundException("Sign-up not found");
+
+        SignUp signUp = signUpsRepository.findById(signUpId)
+                .orElseThrow(() -> new NotFoundException("Sign-up not found"));
+
         signUp.setAttended(attended);
         signUpsRepository.save(signUp);
+
         return "Attendance updated successfully";
     }
 
     public String createSignUp(Long memberId, Long courseId) {
-        validateMemberExists(memberId);
+        Member member = memberService.getMemberById(memberId);
         Course course = getCourseById(courseId);
 
-        boolean alreadySignedUp = signUpsRepository.findByCourseIdAndMemberId(courseId, memberId) != null;
+        boolean alreadySignedUp = signUpsRepository.findByCourse_IdAndMember_Id(courseId, memberId) != null;
         if (alreadySignedUp) throw new ConflictException("Member is already signed up for this course");
 
         int currentOccupancy = safeInt(course.getCurrentOccupancy());
         int maxCapacity = safeInt(course.getMaxCapacity());
 
         if (currentOccupancy < maxCapacity) {
-            SignUp signUp = new SignUp(null, courseId, memberId, LocalDateTime.now(), false);
+            SignUp signUp = new SignUp(course, member, LocalDateTime.now(), false);
             signUpsRepository.save(signUp);
+
             course.setCurrentOccupancy(currentOccupancy + 1);
             coursesRepository.save(course);
+
             return "Member successfully signed up for the course";
         }
 
@@ -131,16 +122,16 @@ public class CoursesService {
             throw new ConflictException("Course and waitlist are both full");
         }
 
-        SignUp signUp = new SignUp(null, courseId, memberId, LocalDateTime.now(), false);
+        SignUp signUp = new SignUp(course, member, LocalDateTime.now(), false);
         signUpsRepository.save(signUp);
 
         WaitlistEntry waitlistEntry = new WaitlistEntry(
-                null,
-                signUp.getId(),
-                memberId,
-                courseId,
-                waitlistsRepository.countByCourseId(courseId) + 1
+                signUp,
+                member,
+                course,
+                waitlistsRepository.countByCourse_Id(courseId) + 1
         );
+
         waitlistsRepository.save(waitlistEntry);
 
         return "Course is full. Member was added to the waitlist at position " + waitlistEntry.getPosition();
@@ -148,133 +139,155 @@ public class CoursesService {
 
     public Course createCourse(Course course) {
         validateCourseData(course);
-        validateTrainerExists(course.getTrainerId());
-        validateLocationExists(course.getLocationId());
 
-        // Un curs nou incepe intotdeauna cu ocupanta 0; se populeaza prin sign-up-uri.
+        Trainer trainer = getTrainerById(course.getTrainer().getId());
+        Location location = getLocationById(course.getLocation().getId());
+
+        course.setTrainer(trainer);
+        course.setLocation(location);
         course.setCurrentOccupancy(0);
-        coursesRepository.save(course);
-        return course;
+
+        return coursesRepository.save(course);
     }
 
     public String updateCourse(Long courseId, Course updatedCourse) {
-        if (courseId == null) throw new ValidationException("Course id is required");
-
         Course existingCourse = getCourseById(courseId);
         validateCourseData(updatedCourse);
-        validateTrainerExists(updatedCourse.getTrainerId());
-        validateLocationExists(updatedCourse.getLocationId());
+
+        Trainer trainer = getTrainerById(updatedCourse.getTrainer().getId());
+        Location location = getLocationById(updatedCourse.getLocation().getId());
 
         int existingOccupancy = safeInt(existingCourse.getCurrentOccupancy());
+
         if (safeInt(updatedCourse.getMaxCapacity()) < existingOccupancy) {
-            throw new ValidationException(
-                    "Max capacity cannot be lower than current occupancy (" + existingOccupancy + ")");
+            throw new ValidationException("Max capacity cannot be lower than current occupancy (" + existingOccupancy + ")");
         }
 
-        updatedCourse.setId(courseId);
-        // Ocupanta se pastreaza din cursul existent — nu se accepta din request body.
-        updatedCourse.setCurrentOccupancy(existingOccupancy);
-        coursesRepository.save(updatedCourse);
+        existingCourse.setTrainer(trainer);
+        existingCourse.setLocation(location);
+        existingCourse.setName(updatedCourse.getName());
+        existingCourse.setType(updatedCourse.getType());
+        existingCourse.setDayOfWeek(updatedCourse.getDayOfWeek());
+        existingCourse.setStartTime(updatedCourse.getStartTime());
+        existingCourse.setDuration(updatedCourse.getDuration());
+        existingCourse.setMaxCapacity(updatedCourse.getMaxCapacity());
+        existingCourse.setRecurring(updatedCourse.getRecurring());
+
+        coursesRepository.save(existingCourse);
         return "Course updated successfully";
     }
 
     public String deleteCourse(Long courseId) {
-        Course course = coursesRepository.findById(courseId);
-        if (course == null) throw new NotFoundException("Course not found");
+        Course course = getCourseById(courseId);
 
-        // Stergem waitlist entries pentru acest curs
-        waitlistsRepository.findAll().stream()
-                .filter(entry -> Long.valueOf(entry.getCourseId()).equals(courseId))
-                .toList()
+        waitlistsRepository.findByCourse_IdOrderByPositionAsc(courseId)
                 .forEach(entry -> waitlistsRepository.deleteById(entry.getId()));
 
-        // Stergem sign-up-urile pentru acest curs
-        signUpsRepository.findAll().stream()
-                .filter(signUp -> Long.valueOf(signUp.getCourseId()).equals(courseId))
-                .toList()
+        signUpsRepository.findByCourse_Id(courseId)
                 .forEach(signUp -> signUpsRepository.deleteById(signUp.getId()));
 
-        coursesRepository.deleteById(courseId);
+        coursesRepository.delete(course);
         return "Course deleted successfully";
     }
 
     public List<Course> getAvailableCourses() {
-        return coursesRepository.findAvailableCourses();
+        return coursesRepository.findAll().stream()
+                .filter(course -> safeInt(course.getCurrentOccupancy()) < safeInt(course.getMaxCapacity()))
+                .toList();
     }
 
     public List<Course> getCoursesByTrainer(Long trainerId) {
         validateTrainerExists(trainerId);
-        return coursesRepository.findByTrainerId(trainerId);
+        return coursesRepository.findByTrainer_Id(trainerId);
     }
 
     public List<Course> getCoursesByTrainerAndLocation(Long trainerId, Long locationId) {
         validateTrainerExists(trainerId);
         validateLocationExists(locationId);
-        return coursesRepository.findByTrainerId(trainerId).stream()
-                .filter(course -> locationId.equals(course.getLocationId()))
+
+        return coursesRepository.findByTrainer_Id(trainerId).stream()
+                .filter(course -> course.getLocation() != null && locationId.equals(course.getLocation().getId()))
                 .toList();
     }
 
     public List<Course> getCoursesForMember(Long memberId) {
         validateMemberExists(memberId);
-        return signUpsRepository.findByMemberId(memberId).stream()
-                .map(s -> coursesRepository.findById(s.getCourseId()))
-                .filter(c -> c != null)
+
+        return signUpsRepository.findByMember_Id(memberId).stream()
+                .map(SignUp::getCourse)
                 .distinct()
                 .toList();
     }
 
     public List<Course> getPastAttendedCoursesForMember(Long memberId) {
         validateMemberExists(memberId);
-        return signUpsRepository.findByMemberId(memberId).stream()
+
+        return signUpsRepository.findByMember_Id(memberId).stream()
                 .filter(s -> Boolean.TRUE.equals(s.getAttended()))
-                .map(s -> coursesRepository.findById(s.getCourseId()))
-                .filter(c -> c != null)
+                .map(SignUp::getCourse)
                 .distinct()
                 .toList();
     }
 
     public long countAccumulatedAttendanceForMember(Long memberId) {
         validateMemberExists(memberId);
-        return signUpsRepository.findByMemberId(memberId).stream()
+
+        return signUpsRepository.findByMember_Id(memberId).stream()
                 .filter(s -> Boolean.TRUE.equals(s.getAttended()))
                 .count();
     }
 
     public List<Course> getAvailableCoursesByLocation(Long locationId) {
         validateLocationExists(locationId);
-        return coursesRepository.findByLocationId(locationId).stream()
+
+        return coursesRepository.findByLocation_Id(locationId).stream()
                 .filter(course -> safeInt(course.getCurrentOccupancy()) < safeInt(course.getMaxCapacity()))
                 .toList();
     }
 
     public List<Course> getCoursesSortedByName() {
-        return coursesRepository.sortByName();
+        return coursesRepository.findAll().stream()
+                .sorted(Comparator.comparing(Course::getName, Comparator.nullsLast(String::compareToIgnoreCase)))
+                .toList();
     }
 
     public List<Course> getCoursesSortedByStartTime() {
-        return coursesRepository.sortByStartTime();
+        return coursesRepository.findAll().stream()
+                .sorted(Comparator.comparing(Course::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
 
     public List<Course> getCoursesSortedByCurrentOccupancyDescending() {
-        return coursesRepository.sortByCurrentOccupancyDescending();
+        return coursesRepository.findAll().stream()
+                .sorted(Comparator.comparing((Course c) -> safeInt(c.getCurrentOccupancy())).reversed())
+                .toList();
     }
 
     public List<Course> getCoursesSortedByMaxCapacityDescending() {
-        return coursesRepository.sortByMaxCapacityDescending();
+        return coursesRepository.findAll().stream()
+                .sorted(Comparator.comparing((Course c) -> safeInt(c.getMaxCapacity())).reversed())
+                .toList();
     }
 
     public List<Course> getCoursesSortedByDayAndStartTime() {
-        return coursesRepository.sortByDayAndStartTime();
+        return coursesRepository.findAll().stream()
+                .sorted(Comparator.comparing(Course::getDayOfWeek, Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(Course::getStartTime, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
     }
 
     public List<Course> getCoursesSortedByLocationAndName() {
-        return coursesRepository.sortByLocationAndName();
+        return coursesRepository.findAll().stream()
+                .sorted(Comparator
+                        .comparing((Course c) -> c.getLocation() == null ? null : c.getLocation().getId(),
+                                Comparator.nullsLast(Comparator.naturalOrder()))
+                        .thenComparing(Course::getName, Comparator.nullsLast(String::compareToIgnoreCase)))
+                .toList();
     }
 
     public List<Course> getCoursesByLocation(Long locationId) {
         validateLocationExists(locationId);
-        return coursesRepository.findByLocationId(locationId);
+        return coursesRepository.findByLocation_Id(locationId);
     }
 
     public List<Course> getCoursesByType(CourseType type) {
@@ -289,33 +302,40 @@ public class CoursesService {
 
     public List<Course> searchCoursesByName(String keyword) {
         if (keyword == null || keyword.isBlank()) throw new ValidationException("Search keyword is required");
-        return coursesRepository.searchByName(keyword);
+        return coursesRepository.findByNameContainingIgnoreCase(keyword);
     }
 
     public List<Course> getFullCourses() {
-        return coursesRepository.findFullCourses();
+        return coursesRepository.findAll().stream()
+                .filter(course -> safeInt(course.getCurrentOccupancy()) >= safeInt(course.getMaxCapacity()))
+                .toList();
     }
 
     public List<Course> getCoursesByLocationAndType(Long locationId, CourseType type) {
         validateLocationExists(locationId);
         if (type == null) throw new ValidationException("Course type is required");
-        return coursesRepository.findByLocationAndType(locationId, type);
+
+        return coursesRepository.findByLocation_IdAndType(locationId, type);
     }
 
     public List<WaitlistEntry> getWaitlistForCourse(Long courseId) {
         getCourseById(courseId);
-        return waitlistsRepository.findByCourseId(courseId);
+        return waitlistsRepository.findByCourse_IdOrderByPositionAsc(courseId);
     }
 
     public SignUpStatus getSignUpStatus(Long courseId, Long memberId) {
         getCourseById(courseId);
         validateMemberExists(memberId);
 
-        SignUp signUp = signUpsRepository.findByCourseIdAndMemberId(courseId, memberId);
+        SignUp signUp = signUpsRepository.findByCourse_IdAndMember_Id(courseId, memberId);
         if (signUp == null) throw new NotFoundException("No sign-up found for this member and course");
 
-        WaitlistEntry waitlistEntry = waitlistsRepository.findBySignUpId(signUp.getId());
-        if (waitlistEntry != null) return new SignUpStatus("WAITLISTED", waitlistEntry.getPosition());
+        WaitlistEntry waitlistEntry = waitlistsRepository.findBySignUp_Id(signUp.getId());
+
+        if (waitlistEntry != null) {
+            return new SignUpStatus("WAITLISTED", waitlistEntry.getPosition());
+        }
+
         return new SignUpStatus("ENROLLED", null);
     }
 
@@ -327,59 +347,70 @@ public class CoursesService {
 
     public Course getCourseById(Long courseId) {
         if (courseId == null) throw new ValidationException("Course id is required");
-        Course course = coursesRepository.findById(courseId);
-        if (course == null) throw new NotFoundException("Course not found");
-        return course;
+
+        return coursesRepository.findById(courseId)
+                .orElseThrow(() -> new NotFoundException("Course not found"));
     }
 
     public int countEnrolledMembers(Long courseId) {
         getCourseById(courseId);
-        return (int) signUpsRepository.findByCourseId(courseId).stream()
-                .filter(s -> waitlistsRepository.findBySignUpId(s.getId()) == null)
+
+        return (int) signUpsRepository.findByCourse_Id(courseId).stream()
+                .filter(s -> waitlistsRepository.findBySignUp_Id(s.getId()) == null)
                 .count();
     }
 
     public List<SignUp> getEnrolledSignUpsForCourse(Long courseId) {
         getCourseById(courseId);
-        return signUpsRepository.findByCourseId(courseId).stream()
-                .filter(s -> waitlistsRepository.findBySignUpId(s.getId()) == null)
+
+        return signUpsRepository.findByCourse_Id(courseId).stream()
+                .filter(s -> waitlistsRepository.findBySignUp_Id(s.getId()) == null)
                 .toList();
     }
 
     private void validateCourseData(Course course) {
         if (course == null) throw new ValidationException("Course data is required");
-        if (course.getName() == null || course.getName().isBlank())
-            throw new ValidationException("Course name is required");
+        if (course.getName() == null || course.getName().isBlank()) throw new ValidationException("Course name is required");
         if (course.getType() == null) throw new ValidationException("Course type is required");
         if (course.getDayOfWeek() == null) throw new ValidationException("Course day is required");
         if (course.getStartTime() == null) throw new ValidationException("Start time is required");
-        if (course.getDuration() == null || course.getDuration() <= 0)
-            throw new ValidationException("Duration must be greater than 0");
-        if (course.getMaxCapacity() == null || course.getMaxCapacity() <= 0)
-            throw new ValidationException("Max capacity must be greater than 0");
-        if (course.getTrainerId() == null) throw new ValidationException("Trainer id is required");
-        if (course.getLocationId() == null) throw new ValidationException("Location id is required");
+        if (course.getDuration() == null || course.getDuration() <= 0) throw new ValidationException("Duration must be greater than 0");
+        if (course.getMaxCapacity() == null || course.getMaxCapacity() <= 0) throw new ValidationException("Max capacity must be greater than 0");
+        if (course.getTrainer() == null || course.getTrainer().getId() == null) throw new ValidationException("Trainer id is required");
+        if (course.getLocation() == null || course.getLocation().getId() == null) throw new ValidationException("Location id is required");
+    }
+
+    private Trainer getTrainerById(Long trainerId) {
+        if (trainerId == null) throw new ValidationException("Trainer id is required");
+
+        User user = userRepository.findById(trainerId)
+                .orElseThrow(() -> new NotFoundException("Trainer not found"));
+
+        if (!(user instanceof Trainer trainer) || !trainer.isActive()) {
+            throw new NotFoundException("Trainer not found or inactive");
+        }
+
+        return trainer;
     }
 
     private void validateTrainerExists(Long trainerId) {
-        if (trainerId == null) throw new ValidationException("Trainer id is required");
-        UserI user = userRepository.findById(trainerId);
-        if (!(user instanceof Trainer) || !user.isActive()) {
-            throw new NotFoundException("Trainer not found or inactive");
-        }
+        getTrainerById(trainerId);
+    }
+
+    private Location getLocationById(Long locationId) {
+        if (locationId == null) throw new ValidationException("Location id is required");
+
+        return locationRepository.findById(locationId)
+                .orElseThrow(() -> new NotFoundException("Location not found"));
     }
 
     private void validateLocationExists(Long locationId) {
-        if (locationId == null) throw new ValidationException("Location id is required");
-        Location location = locationRepository.findById(locationId);
-        if (location == null) throw new NotFoundException("Location not found");
+        getLocationById(locationId);
     }
 
     private void validateMemberExists(Long memberId) {
         if (memberId == null) throw new ValidationException("Member id is required");
-        // getMemberById arunca NotFoundException daca membrul nu exista
         memberService.getMemberById(memberId);
-        // Nota: member.isActive() este intotdeauna true (membrii nu pot fi dezactivati)
     }
 
     private int safeInt(Integer value) {
