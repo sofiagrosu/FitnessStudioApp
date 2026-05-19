@@ -1,47 +1,97 @@
 package com.fitness.fitness_app.model;
 
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "check_ins")
 public class CheckIn {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long memberId;
-    private Long locationId;
-    private Long zoneId;
+
+    @ManyToOne
+    @JoinColumn(name = "member_id")
+    private Member member;
+
+    @ManyToOne
+    @JoinColumn(name = "location_id")
+    private Location location;
+
+    @ManyToOne
+    @JoinColumn(name = "zone_id")
+    private Zone zone;
+
     private LocalDateTime checkInTime;
+
     private LocalDateTime checkOutTime;
 
     public CheckIn() {}
 
-    public CheckIn(Long id, Long memberId, Long locationId, Long zoneId, LocalDateTime checkInTime, LocalDateTime checkOutTime) {
-        this.id = id;
-        this.memberId = memberId;
-        this.locationId = locationId;
-        this.zoneId = zoneId;
+    public CheckIn(Member member, Location location, Zone zone,
+                   LocalDateTime checkInTime, LocalDateTime checkOutTime) {
+        this.member = member;
+        this.location = location;
+        this.zone = zone;
         this.checkInTime = checkInTime;
         this.checkOutTime = checkOutTime;
     }
 
-    @Override
-    public String toString() {
-        return "CheckIn{" +
-                "memberId=" + memberId +
-                ", locationId=" + locationId +
-                ", zoneId=" + zoneId +
-                ", checkInTime=" + checkInTime +
-                ", checkOutTime=" + checkOutTime +
-                '}';
+    public Long getId() {
+        return id;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Long getMemberId() { return memberId; }
-    public void setMemberId(Long memberId) { this.memberId = memberId; }
-    public Long getLocationId() { return locationId; }
-    public void setLocationId(Long locationId) { this.locationId = locationId; }
-    public Long getZoneId() { return zoneId; }
-    public void setZoneId(Long zoneId) { this.zoneId = zoneId; }
-    public LocalDateTime getCheckInTime() { return checkInTime; }
-    public void setCheckInTime(LocalDateTime checkInTime) { this.checkInTime = checkInTime; }
-    public LocalDateTime getCheckOutTime() { return checkOutTime; }
-    public void setCheckOutTime(LocalDateTime checkOutTime) { this.checkOutTime = checkOutTime; }
+    public Member getMember() {
+        return member;
+    }
+
+    public void setMember(Member member) {
+        this.member = member;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
+    }
+
+    public Zone getZone() {
+        return zone;
+    }
+
+    public void setZone(Zone zone) {
+        this.zone = zone;
+    }
+
+    public Long getMemberId() {
+        return member == null ? null : member.getId();
+    }
+
+    public Long getLocationId() {
+        return location == null ? null : location.getId();
+    }
+
+    public Long getZoneId() {
+        return zone == null ? null : zone.getId();
+    }
+
+    public LocalDateTime getCheckInTime() {
+        return checkInTime;
+    }
+
+    public void setCheckInTime(LocalDateTime checkInTime) {
+        this.checkInTime = checkInTime;
+    }
+
+    public LocalDateTime getCheckOutTime() {
+        return checkOutTime;
+    }
+
+    public void setCheckOutTime(LocalDateTime checkOutTime) {
+        this.checkOutTime = checkOutTime;
+    }
 }

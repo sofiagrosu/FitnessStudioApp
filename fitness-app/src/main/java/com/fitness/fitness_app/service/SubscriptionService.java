@@ -3,6 +3,7 @@ package com.fitness.fitness_app.service;
 import com.fitness.fitness_app.exception.ConflictException;
 import com.fitness.fitness_app.exception.NotFoundException;
 import com.fitness.fitness_app.exception.ValidationException;
+import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.model.Subscription;
 import com.fitness.fitness_app.model.enums.SubscriptionStatus;
 import com.fitness.fitness_app.model.enums.SubscriptionType;
@@ -33,7 +34,10 @@ public class SubscriptionService {
                     "Member already has an active subscription. It must expire or be suspended before purchasing a new one.");
         }
 
-        Subscription subscription = new Subscription(null, memberId, type, LocalDate.now(), price);
+       Member member = memberService.getMemberById(memberId);
+
+Subscription subscription =
+        new Subscription(member,type,LocalDate.now(),price);
         applySubscriptionRules(subscription);
         return subscriptionsRepository.save(subscription);
     }
@@ -91,19 +95,33 @@ public class SubscriptionService {
             subscriptionsRepository.save(subscription);
         }
     }
-
-    public Subscription getActiveSubscriptionForMember(Long memberId) {
-        if (memberId == null) return null;
-        Subscription subscription = subscriptionsRepository.findActiveByMemberId(memberId);
-        if (subscription != null) refreshStatus(subscription);
-        return subscription;
+public Subscription getActiveSubscriptionForMember(Long memberId) {
+    if (memberId == null) {
+        return null;
     }
 
-    public List<Subscription> getSubscriptionsForMember(Long memberId) {
-        if (memberId == null) throw new ValidationException("Member id is required");
-        memberService.getMemberById(memberId); // throws NotFoundException if member doesn't exist
-        return subscriptionsRepository.findByMemberId(memberId);
+    Subscription subscription = subscriptionsRepository
+            .findFirstByMember_IdAndStatusOrderByStartDateDesc(
+                    memberId,
+                    SubscriptionStatus.ACTIVE
+            );
+
+    if (subscription != null) {
+        refreshStatus(subscription);
     }
+
+    return subscription;
+}
+
+  public List<Subscription> getSubscriptionsForMember(Long memberId) {
+    if (memberId == null) {
+        throw new ValidationException("Member id is required");
+    }
+
+    memberService.getMemberById(memberId);
+
+    return subscriptionsRepository.findByMember_Id(memberId);
+}
 
     public void markAsPaid(Long subscriptionId) {
         Subscription subscription = getSubscriptionById(subscriptionId);
@@ -111,12 +129,15 @@ public class SubscriptionService {
         subscriptionsRepository.save(subscription);
     }
 
-    public Subscription getSubscriptionById(Long subscriptionId) {
-        if (subscriptionId == null) throw new ValidationException("Subscription id is required");
-        Subscription subscription = subscriptionsRepository.findById(subscriptionId);
-        if (subscription == null) throw new NotFoundException("Subscription not found");
-        return subscription;
+   public Subscription getSubscriptionById(Long subscriptionId) {
+    if (subscriptionId == null) {
+        throw new ValidationException("Subscription id is required");
     }
+
+    return subscriptionsRepository.findById(subscriptionId)
+            .orElseThrow(() ->
+                    new NotFoundException("Subscription not found"));
+}
 
     private void validateSubscriptionInput(Long memberId, SubscriptionType type, Double price) {
         if (memberId == null) throw new ValidationException("Member id is required");
