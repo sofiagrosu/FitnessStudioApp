@@ -2,8 +2,10 @@ package com.fitness.fitness_app.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fitness.fitness_app.model.enums.Role;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Trainer implements UserI {
     private static final long serialVersionUID = 1L;
