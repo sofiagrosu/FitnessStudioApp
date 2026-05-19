@@ -12,6 +12,7 @@ import com.fitness.fitness_app.service.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -41,6 +42,7 @@ class FitnessFunctionalFlowTests {
     @Autowired private WaitlistsRepository waitlistsRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private LocationRepository locationRepository;
+    @Autowired private JdbcTemplate jdbcTemplate;
 
     private Long memberId;
     private String memberQrCode;
@@ -49,6 +51,109 @@ class FitnessFunctionalFlowTests {
     private Long trainerId;
     private Long locationId;
     private Long zoneId;
+
+    @BeforeAll
+    void cleanUpPreviousTestData() {
+        // Sterge datele lasate de rulari anterioare, in ordinea corecta a FK-urilor.
+        // Foloseste multi-table DELETE MySQL pentru a evita subquery-uri pe acelasi tabel.
+
+        // 1. receipts -> payments -> member
+        jdbcTemplate.update("""
+            DELETE r FROM receipts r
+            JOIN payments p ON r.payment_id = p.id
+            JOIN users u ON p.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+
+        // 2. waitlist_entries -> member
+        jdbcTemplate.update("""
+            DELETE we FROM waitlist_entries we
+            JOIN users u ON we.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+
+        // 3. sign_ups -> member
+        jdbcTemplate.update("""
+            DELETE su FROM sign_ups su
+            JOIN users u ON su.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+
+        // 4. check_ins -> member
+        jdbcTemplate.update("""
+            DELETE ci FROM check_ins ci
+            JOIN users u ON ci.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+
+        // 5. payments -> member
+        jdbcTemplate.update("""
+            DELETE p FROM payments p
+            JOIN users u ON p.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+
+        // 6. subscriptions -> member
+        jdbcTemplate.update("""
+            DELETE s FROM subscriptions s
+            JOIN users u ON s.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+
+        // 7. waitlist_entries pentru cursurile trainerului de test
+        jdbcTemplate.update("""
+            DELETE we FROM waitlist_entries we
+            JOIN courses c ON we.course_id = c.id
+            JOIN users u ON c.trainer_id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
+
+        // 8. sign_ups pentru cursurile trainerului de test
+        jdbcTemplate.update("""
+            DELETE su FROM sign_ups su
+            JOIN courses c ON su.course_id = c.id
+            JOIN users u ON c.trainer_id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
+
+        // 9. cursurile trainerului de test
+        jdbcTemplate.update("""
+            DELETE c FROM courses c
+            JOIN users u ON c.trainer_id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
+
+        // 10. zonele locatiei de test (FK catre locations)
+        jdbcTemplate.update("""
+            DELETE z FROM zones z
+            JOIN locations l ON z.location_id = l.id
+            WHERE l.name = 'Centru' AND l.address = 'Str. Principala 1'
+        """);
+
+        // 11. locatia de test
+        jdbcTemplate.update("""
+            DELETE FROM locations
+            WHERE name = 'Centru' AND address = 'Str. Principala 1'
+        """);
+
+        // 12. sub-tabelele JPA (JOINED inheritance)
+        jdbcTemplate.update("""
+            DELETE m FROM members m
+            JOIN users u ON m.id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE t FROM trainers t
+            JOIN users u ON t.id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
+
+        // 13. randul din tabela de baza users
+        jdbcTemplate.update("""
+            DELETE FROM users
+            WHERE email IN ('trainer.functional@test.com','elena.functional@test.com','maria.functional@test.com')
+        """);
+    }
 
     @DynamicPropertySource
     static void configureTestDataFiles(DynamicPropertyRegistry registry) {
