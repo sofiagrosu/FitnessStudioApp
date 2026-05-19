@@ -4,12 +4,15 @@ import { registerUser } from "../services/authService";
 
 function Register() {
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
-    informations: "",
+    phone: "",
     active: true,
+    role: "MEMBER",
   });
 
   const [error, setError] = useState("");
@@ -35,9 +38,15 @@ function Register() {
         {error && <div className="error-box">{error}</div>}
 
         <input
-          placeholder="Full name"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="First name"
+          value={form.firstName}
+          onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+        />
+
+        <input
+          placeholder="Last name"
+          value={form.lastName}
+          onChange={(e) => setForm({ ...form, lastName: e.target.value })}
         />
 
         <input
@@ -54,9 +63,9 @@ function Register() {
         />
 
         <input
-          placeholder="Informations"
-          value={form.informations}
-          onChange={(e) => setForm({ ...form, informations: e.target.value })}
+          placeholder="Phone"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
         />
 
         <button className="primary-btn">Create account</button>
