@@ -1,63 +1,97 @@
 package com.fitness.fitness_app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "waitlist_entries")
 public class WaitlistEntry {
 
-    public WaitlistEntry() {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToOne
+    @JoinColumn(name = "sign_up_id", nullable = false)
+    private SignUp signUp;
+
+    @ManyToOne
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
+
+    @ManyToOne
+    @JoinColumn(name = "course_id", nullable = false)
+    private Course course;
+
+    private Integer position;
+
+    public WaitlistEntry() {}
+
+    public WaitlistEntry(SignUp signUp, Member member, Course course, Integer position) {
+        this.signUp = signUp;
+        this.member = member;
+        this.course = course;
+        this.position = position;
     }
 
-private Long id;
-private Long courseId;
-private Long memberId;
-private Long signUpId;
-private Integer position;
+    public Long getId() {
+        return id;
+    }
 
-public WaitlistEntry(Long id, Long signUpId, Long memberId, Long courseId, Integer position) {
-    this.id = id;
-    this.courseId = courseId;
-    this.memberId = memberId;
-    this.signUpId = signUpId;
-    this.position = position;
-}
-//to string : get all informations (except id) in a string
-@Override
-public String toString() {
-    return "WaitlistEntry{" +
-            "courseId=" + courseId +
-            ", memberId=" + memberId +
-            ", signUpId=" + signUpId +
-            ", position=" + position +
-            '}';
-}
-public Long getCourseId() {
-    return courseId;
-}
+    public SignUp getSignUp() {
+        return signUp;
+    }
 
-public void setCourseId(Long courseId) {
-    this.courseId = courseId;
-}
-public Long getId() {
-    return id;
-}
-public void setId(Long id) {
-    this.id = id;
-}
-public Long getMemberId() {
-    return memberId;
-}
-public void setMemberId(Long memberId) {
-    this.memberId = memberId;
-}
-public Long getSignUpId() {
-    return signUpId;
-}
-public void setSignUpId(Long signUpId) {
-    this.signUpId = signUpId;
-}
-public Integer getPosition() {
-    return position;
-}
-public void setPosition(Integer position) {
-    this.position = position;
-}
-}
+    public void setSignUp(SignUp signUp) {
+        this.signUp = signUp;
+    }
 
+    public Member getMember() {
+        return member;
+    }
+
+    public void setMember(Member member) {
+        this.member = member;
+    }
+
+    public Course getCourse() {
+        return course;
+    }
+
+    public void setCourse(Course course) {
+        this.course = course;
+    }
+
+    @JsonIgnore
+    public Long getSignUpId() {
+        return signUp == null ? null : signUp.getId();
+    }
+
+    @JsonIgnore
+    public Long getMemberId() {
+        return member == null ? null : member.getId();
+    }
+
+    @JsonIgnore
+    public Long getCourseId() {
+        return course == null ? null : course.getId();
+    }
+
+    public Integer getPosition() {
+        return position;
+    }
+
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
+    @Override
+    public String toString() {
+        return "WaitlistEntry{" +
+                "courseId=" + getCourseId() +
+                ", memberId=" + getMemberId() +
+                ", signUpId=" + getSignUpId() +
+                ", position=" + position +
+                '}';
+    }
+}

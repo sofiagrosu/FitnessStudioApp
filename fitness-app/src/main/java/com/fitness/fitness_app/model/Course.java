@@ -2,155 +2,136 @@ package com.fitness.fitness_app.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.*;
+
 import java.time.LocalTime;
 
+@Entity
+@Table(name="courses")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Course {
 
-    public Course() {
-    }
-
-
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long trainerId; 
+
+    @ManyToOne
+    @JoinColumn(name="trainer_id")
+    private Trainer trainer;
+
+    @ManyToOne
+    @JoinColumn(name="location_id")
+    private Location location;
+
     private String name;
+
+    @Enumerated(EnumType.STRING)
     private CourseType type;
+
+    @Enumerated(EnumType.STRING)
     private DayOfWeek dayOfWeek;
+
     private LocalTime startTime;
-    private Integer duration; // in minutes
+
+    private Integer duration;
+
     private Integer maxCapacity;
+
     private Boolean recurring;
-    private Integer currentOccupancy; // New field to track current occupancy
-    private Long locationId; // New field to associate a location with the course
-  
-    // Constructor complet
-    public Course(Long id, Long trainerId, String name, CourseType type,
-                  DayOfWeek dayOfWeek, LocalTime startTime,
-                  Integer duration, Integer maxCapacity,
-                  Boolean recurring, Integer currentOccupancy, Long locationId) {
 
-        this.id = id;
-        this.trainerId = trainerId;
-        this.name = name;
-        this.type = type;
-        this.dayOfWeek = dayOfWeek;
-        this.startTime = startTime;
-        this.duration = duration;
-        this.maxCapacity = maxCapacity;
-        this.recurring = recurring;
-        this.currentOccupancy = currentOccupancy;
-        this.locationId = locationId;
-    }
+    private Integer currentOccupancy;
 
-    @Override
-    public String toString() {
-        return "Course{" +
-                "trainerId=" + trainerId +
-                ", name='" + name + '\'' +
-                ", type=" + type +
-                ", dayOfWeek=" + dayOfWeek +
-                ", startTime=" + startTime +
-                ", duration=" + duration +
-                ", maxCapacity=" + maxCapacity +
-                ", recurring=" + recurring +
-                ", currentOccupancy=" + currentOccupancy +
-                ", locationId=" + locationId +
-                '}';
-    }
-public Long getLocationId() {
-        return locationId;
-    }
-
-    public void setLocationId(Long locationId) {
-        this.locationId = locationId;
-    }
-
-    public Integer getCurrentOccupancy() {
-        return currentOccupancy;
-    }
-
-    public void setCurrentOccupancy(Integer currentOccupancy) {
-        this.currentOccupancy = currentOccupancy;
-    }
+    public Course(){}
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Trainer getTrainer() {
+        return trainer;
+    }
+
+    public void setTrainer(Trainer trainer) {
+        this.trainer = trainer;
+    }
+
+    public Location getLocation() {
+        return location;
+    }
+
+    public void setLocation(Location location) {
+        this.location = location;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setName(String name){
+        this.name=name;
     }
 
     public CourseType getType() {
         return type;
     }
 
-    public void setType(CourseType type) {
-        this.type = type;
+    public void setType(CourseType type){
+        this.type=type;
     }
 
-    public DayOfWeek getDayOfWeek() {
+    public DayOfWeek getDayOfWeek(){
         return dayOfWeek;
     }
 
-    public void setDayOfWeek(DayOfWeek dayOfWeek) {
-        this.dayOfWeek = dayOfWeek;
+    public void setDayOfWeek(DayOfWeek dayOfWeek){
+        this.dayOfWeek=dayOfWeek;
     }
 
-    public LocalTime getStartTime() {
+    public LocalTime getStartTime(){
         return startTime;
     }
 
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
+    public void setStartTime(LocalTime startTime){
+        this.startTime=startTime;
+    }
+
+    public Integer getDuration(){
+        return duration;
+    }
+
+    public void setDuration(Integer duration){
+        this.duration=duration;
+    }
+
+    public Integer getMaxCapacity(){
+        return maxCapacity;
+    }
+
+    public void setMaxCapacity(Integer maxCapacity){
+        this.maxCapacity=maxCapacity;
+    }
+
+    public Boolean getRecurring(){
+        return recurring;
+    }
+
+    public void setRecurring(Boolean recurring){
+        this.recurring=recurring;
+    }
+
+    public Integer getCurrentOccupancy(){
+        return currentOccupancy;
+    }
+
+    public void setCurrentOccupancy(Integer currentOccupancy){
+        this.currentOccupancy=currentOccupancy;
     }
 
     @JsonIgnore
     public LocalTime getEndTime() {
-        if (startTime == null || duration == null) {
+        if(startTime==null || duration==null){
             return null;
         }
         return startTime.plusMinutes(duration);
     }
-
-
-    public Integer getMaxCapacity() {
-        return maxCapacity;
-    }
-
-    public void setMaxCapacity(Integer maxCapacity) {
-        this.maxCapacity = maxCapacity;
-    }
-
-    public Boolean getRecurring() {
-        return recurring;
-    }
-
-    public void setRecurring(Boolean recurring) {
-        this.recurring = recurring;
-    }
-public Long getTrainerId() {
-        return trainerId;
-    }
-
-    public void setTrainerId(Long trainerId) {
-        this.trainerId = trainerId;
-    }
-public Integer getDuration() {
-        return duration;
-    }
-
-    public void setDuration(Integer duration) {
-        this.duration = duration;
-    }
 }
-
-

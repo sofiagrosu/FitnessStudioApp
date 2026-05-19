@@ -1,60 +1,67 @@
 package com.fitness.fitness_app.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "sign_ups")
 public class SignUp {
 
-    public SignUp() {
-    }
-
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private long courseId;
-    private long memberId;
-  
-private LocalDateTime bookingTime;
-    private Boolean attended; // New field to track attendance
 
-    public SignUp(Long id, long courseId, long memberId, LocalDateTime bookingTime, Boolean attended) {
-        this.id = id;
-        this.courseId = courseId;
-        this.memberId = memberId;
+    @ManyToOne
+    @JoinColumn(name = "course_id", nullable = false)
+    private Course course;
+
+    @ManyToOne
+    @JoinColumn(name = "member_id", nullable = false)
+    private Member member;
+
+    private LocalDateTime bookingTime;
+
+    private Boolean attended;
+
+    public SignUp() {}
+
+    public SignUp(Course course, Member member, LocalDateTime bookingTime, Boolean attended) {
+        this.course = course;
+        this.member = member;
         this.bookingTime = bookingTime;
-        
         this.attended = attended;
-    }
-
-//to string : get all informations (except id) in a string
-    @Override   
-    public String toString() {
-        return "SignUp{" +
-                "courseId=" + courseId +
-                ", memberId=" + memberId +
-                ", bookingTime=" + bookingTime +
-                ", attended=" + attended +
-                '}';
     }
 
     public Long getId() {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Course getCourse() {
+        return course;
     }
 
-    public long getCourseId() {
-        return courseId;
+    public void setCourse(Course course) {
+        this.course = course;
     }
 
-    public void setCourseId(long courseId) {
-        this.courseId = courseId;
+    public Member getMember() {
+        return member;
     }
 
-    public long getMemberId() {
-        return memberId;
+    public void setMember(Member member) {
+        this.member = member;
     }
 
-    public void setMemberId(long memberId) {
-        this.memberId = memberId;
+    @JsonIgnore
+    public Long getCourseId() {
+        return course == null ? null : course.getId();
+    }
+
+    @JsonIgnore
+    public Long getMemberId() {
+        return member == null ? null : member.getId();
     }
 
     public LocalDateTime getBookingTime() {
@@ -63,7 +70,6 @@ private LocalDateTime bookingTime;
 
     public void setBookingTime(LocalDateTime bookingTime) {
         this.bookingTime = bookingTime;
-
     }
 
     public Boolean getAttended() {
@@ -73,7 +79,14 @@ private LocalDateTime bookingTime;
     public void setAttended(Boolean attended) {
         this.attended = attended;
     }
-   
 
-
+    @Override
+    public String toString() {
+        return "SignUp{" +
+                "courseId=" + getCourseId() +
+                ", memberId=" + getMemberId() +
+                ", bookingTime=" + bookingTime +
+                ", attended=" + attended +
+                '}';
+    }
 }
