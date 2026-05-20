@@ -135,4 +135,9 @@ public class MemberService {
             throw new ValidationException("Email is required");
         }
     }
+
+    public Member findByUniqueCode(String uniqueCode) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'findByUniqueCode'");
+    }
 }
