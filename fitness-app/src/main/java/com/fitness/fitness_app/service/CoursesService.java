@@ -20,19 +20,22 @@ public class CoursesService {
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
     private final MemberService memberService;
+    private final SubscriptionService subscriptionService;
 
     public CoursesService(CoursesRepository coursesRepository,
                           WaitlistsRepository waitlistsRepository,
                           SignUpsRepository signUpsRepository,
                           UserRepository userRepository,
                           LocationRepository locationRepository,
-                          MemberService memberService) {
+                          MemberService memberService,
+                          SubscriptionService subscriptionService) {
         this.coursesRepository = coursesRepository;
         this.waitlistsRepository = waitlistsRepository;
         this.signUpsRepository = signUpsRepository;
         this.userRepository = userRepository;
         this.locationRepository = locationRepository;
         this.memberService = memberService;
+        this.subscriptionService = subscriptionService;
     }
 
     public String cancelSignUp(Long signUpId, Long requestingMemberId) {
@@ -101,6 +104,11 @@ public class CoursesService {
     public String createSignUp(Long memberId, Long courseId) {
         Member member = memberService.getMemberById(memberId);
         Course course = getCourseById(courseId);
+
+        Subscription subscription = subscriptionService.getActiveSubscriptionForMember(memberId);
+        if (subscription == null || !subscription.isPaid()) {
+            throw new ValidationException("Member must have an active paid subscription to join a course");
+        }
 
         boolean alreadySignedUp = signUpsRepository.findByCourse_IdAndMember_Id(courseId, memberId) != null;
         if (alreadySignedUp) throw new ConflictException("Member is already signed up for this course");

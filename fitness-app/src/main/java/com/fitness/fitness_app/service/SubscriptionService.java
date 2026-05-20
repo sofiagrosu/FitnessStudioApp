@@ -7,6 +7,7 @@ import com.fitness.fitness_app.model.Member;
 import com.fitness.fitness_app.model.Subscription;
 import com.fitness.fitness_app.model.enums.SubscriptionStatus;
 import com.fitness.fitness_app.model.enums.SubscriptionType;
+import com.fitness.fitness_app.repository.SignUpsRepository;
 import com.fitness.fitness_app.repository.SubscriptionsRepository;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -18,11 +19,17 @@ import java.util.List;
 public class SubscriptionService {
     private final SubscriptionsRepository subscriptionsRepository;
     private final MemberService memberService;
+    private final CoursesService coursesService;
+    private final SignUpsRepository signUpsRepository;
 
     public SubscriptionService(SubscriptionsRepository subscriptionsRepository,
-                               @Lazy MemberService memberService) {
+                               @Lazy MemberService memberService,
+                               @Lazy CoursesService coursesService,
+                               SignUpsRepository signUpsRepository) {
         this.subscriptionsRepository = subscriptionsRepository;
         this.memberService = memberService;
+        this.coursesService = coursesService;
+        this.signUpsRepository = signUpsRepository;
     }
 
     public Subscription createSubscription(Long memberId, SubscriptionType type, Double price) {
@@ -67,7 +74,9 @@ Subscription subscription =
             throw new ConflictException("Only active subscriptions can be suspended");
         }
         subscription.setStatus(SubscriptionStatus.SUSPENDED);
-        return subscriptionsRepository.save(subscription);
+        subscriptionsRepository.save(subscription);
+        unenrollFromAllCourses(subscription.getMemberId());
+        return subscription;
     }
 
     public boolean hasValidAccess(Long memberId) {
@@ -177,8 +186,17 @@ public Subscription getActiveSubscriptionForMember(Long memberId) {
                 && subscription.getRemainingEntries() != null
                 && subscription.getRemainingEntries() <= 0;
         if (expiredByDate || expiredByEntries) {
-            subscription.setStatus(SubscriptionStatus.EXPIRED);
-            subscriptionsRepository.save(subscription);
+            if (subscription.getStatus() != SubscriptionStatus.EXPIRED) {
+                subscription.setStatus(SubscriptionStatus.EXPIRED);
+                subscriptionsRepository.save(subscription);
+                unenrollFromAllCourses(subscription.getMemberId());
+            }
         }
+    }
+
+    private void unenrollFromAllCourses(Long memberId) {
+        signUpsRepository.findByMember_Id(memberId).forEach(signUp ->
+            coursesService.cancelSignUp(signUp.getId(), memberId)
+        );
     }
 }
