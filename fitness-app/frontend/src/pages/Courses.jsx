@@ -110,8 +110,15 @@ function Courses() {
       // Reload both courses (counter update) and enrolled list
       await loadCourses();
       await loadEnrolled();
-    } catch {
-      setMessage("Could not join class. It may be full or you are already signed up.");
+    } catch (err) {
+      const status = err?.response?.status;
+      if (status === 400) {
+        setMessage("You need an active paid subscription to join a class. Go to Memberships to get one.");
+      } else if (status === 409) {
+        setMessage("You are already signed up for this class.");
+      } else {
+        setMessage("Could not join class. Please try again.");
+      }
     } finally {
       setLoadingId(null);
     }

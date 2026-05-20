@@ -13,10 +13,14 @@ function Profile() {
         <p className="section-subtitle">Your account information.</p>
 
         <div className="form-card card">
-          <p><strong>Name:</strong> {user?.name || "Not logged in"}</p>
+          <p><strong>Name:</strong> {user ? `${user.firstName} ${user.lastName}` : "-"}</p>
           <p><strong>Email:</strong> {user?.email || "-"}</p>
-          <p><strong>Role:</strong> {user?.role || "MEMBER"}</p>
-          <p><strong>Active:</strong> {String(user?.active ?? true)}</p>
+          <p><strong>Phone:</strong> {user?.phone || "-"}</p>
+          <p><strong>Role:</strong> {user?.role || "-"}</p>
+
+          {user?.qrCode && (
+            <p><strong>QR Code:</strong> {user.qrCode}</p>
+          )}
         </div>
       </main>
     </div>

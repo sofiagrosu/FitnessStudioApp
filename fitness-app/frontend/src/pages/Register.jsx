@@ -21,11 +21,20 @@ function Register() {
     e.preventDefault();
     setError("");
 
+    if (!form.firstName.trim()) { setError("First name is required."); return; }
+    if (!form.lastName.trim())  { setError("Last name is required.");  return; }
+    if (!form.email.trim())     { setError("Email is required.");       return; }
+    if (!form.password.trim())  { setError("Password is required.");    return; }
+    if (!/^\d{10}$/.test(form.phone)) {
+      setError("Phone number must be exactly 10 digits.");
+      return;
+    }
+
     try {
       await registerUser(form);
       navigate("/dashboard");
     } catch {
-      setError("Register failed. Check backend/member fields.");
+      setError("Registration failed. Please try again.");
     }
   }
 
@@ -63,9 +72,14 @@ function Register() {
         />
 
         <input
-          placeholder="Phone"
+          placeholder="Phone (10 digits)"
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          inputMode="numeric"
+          maxLength={10}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, "");
+            setForm({ ...form, phone: val });
+          }}
         />
 
         <button className="primary-btn">Create account</button>

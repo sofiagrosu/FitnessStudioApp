@@ -16,3 +16,7 @@ export const getCourseWaitlist = (courseId) =>
 
 export const leaveCourse = (signUpId, memberId) =>
   api.delete(`/courses/signups/${signUpId}?memberId=${memberId}`);
+
+export const createCourse = (data) => api.post("/courses", data);
+export const updateCourse = (courseId, data) => api.put(`/courses/${courseId}`, data);
+export const deleteCourse = (courseId) => api.delete(`/courses/${courseId}`);

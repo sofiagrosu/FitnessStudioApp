@@ -1,30 +1,47 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import StatCard from "../components/StatCard";
-import { Users, Trash2, UserPlus } from "lucide-react";
-import {
-  getAllTrainers, getAllReceptionists,
-  addUser, deactivateUser,
-} from "../services/adminService";
+import { Users, Trash2, UserPlus, Plus, Pencil } from "lucide-react";
+import { getAllTrainers, getAllReceptionists, addUser, deactivateUser } from "../services/adminService";
+import { getCourses, createCourse, updateCourse, deleteCourse } from "../services/courseService";
+import { getLocations } from "../services/locationService";
 
-const EMPTY_FORM = {
-  firstName: "", lastName: "", email: "", password: "",
+const EMPTY_USER_FORM = { firstName: "", lastName: "", email: "", password: "" };
+
+const EMPTY_COURSE_FORM = {
+  name: "", type: "YOGA", trainerId: "", locationId: "",
+  dayOfWeek: "MONDAY", startTime: "09:00",
+  duration: 60, maxCapacity: 20, recurring: true,
 };
 
+const COURSE_TYPES  = ["YOGA", "SPINNING", "ZUMBA", "PILATES"];
+const DAYS_OF_WEEK  = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"];
+
 function AdminDashboard() {
-  const [trainers, setTrainers]         = useState([]);
+  const [trainers, setTrainers]           = useState([]);
   const [receptionists, setReceptionists] = useState([]);
-  const [tab, setTab]                   = useState("trainers");
-  const [showForm, setShowForm]         = useState(false);
-  const [form, setForm]                 = useState(EMPTY_FORM);
-  const [error, setError]               = useState("");
-  const [success, setSuccess]           = useState("");
+  const [courses, setCourses]             = useState([]);
+  const [locations, setLocations]         = useState([]);
+  const [tab, setTab]                     = useState("trainers");
+  const [showForm, setShowForm]           = useState(false);
+  const [editingCourse, setEditingCourse] = useState(null); // course being edited
+  const [userForm, setUserForm]           = useState(EMPTY_USER_FORM);
+  const [courseForm, setCourseForm]       = useState(EMPTY_COURSE_FORM);
+  const [error, setError]                 = useState("");
+  const [success, setSuccess]             = useState("");
 
   async function loadData() {
     try {
-      const [t, r] = await Promise.all([getAllTrainers(), getAllReceptionists()]);
+      const [t, r, c, l] = await Promise.all([
+        getAllTrainers(),
+        getAllReceptionists(),
+        getCourses(),
+        getLocations(),
+      ]);
       setTrainers(t.data);
       setReceptionists(r.data);
+      setCourses(c.data);
+      setLocations(l.data);
     } catch (e) {
       console.error(e);
     }
@@ -32,15 +49,14 @@ function AdminDashboard() {
 
   useEffect(() => { loadData(); }, []);
 
-  async function handleAdd(e) {
+  // ── User add ──────────────────────────────────────────────
+  async function handleAddUser(e) {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError(""); setSuccess("");
     const role = tab === "trainers" ? "TRAINER" : "RECEPTIONIST";
-    const payload = { ...form, role, type: role };
     try {
-      await addUser(payload);
-      setForm(EMPTY_FORM);
+      await addUser({ ...userForm, role, type: role });
+      setUserForm(EMPTY_USER_FORM);
       setShowForm(false);
       setSuccess(`${role === "TRAINER" ? "Trainer" : "Receptionist"} added successfully.`);
       loadData();
@@ -51,6 +67,7 @@ function AdminDashboard() {
 
   async function handleDeactivate(id) {
     if (!window.confirm("Deactivate this user?")) return;
+    setError(""); setSuccess("");
     try {
       await deactivateUser(id);
       loadData();
@@ -59,42 +76,123 @@ function AdminDashboard() {
     }
   }
 
-  const list = tab === "trainers" ? trainers : receptionists;
+  // ── Course add / edit / delete ────────────────────────────
+  function buildCoursePayload(form) {
+    return {
+      name:             form.name,
+      type:             form.type,
+      trainer:          { id: Number(form.trainerId) },
+      location:         { id: Number(form.locationId) },
+      dayOfWeek:        form.dayOfWeek,
+      startTime:        form.startTime.length === 5 ? form.startTime + ":00" : form.startTime,
+      duration:         Number(form.duration),
+      maxCapacity:      Number(form.maxCapacity),
+      recurring:        form.recurring,
+      currentOccupancy: 0,
+    };
+  }
+
+  async function handleAddCourse(e) {
+    e.preventDefault();
+    setError(""); setSuccess("");
+    if (!courseForm.trainerId)  { setError("Please select a trainer.");  return; }
+    if (!courseForm.locationId) { setError("Please select a location."); return; }
+    try {
+      await createCourse(buildCoursePayload(courseForm));
+      setCourseForm(EMPTY_COURSE_FORM);
+      setShowForm(false);
+      setSuccess("Course created successfully.");
+      loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Error creating course.");
+    }
+  }
+
+  function handleEditClick(course) {
+    setEditingCourse(course.id);
+    setCourseForm({
+      name:        course.name          || "",
+      type:        course.type          || "YOGA",
+      trainerId:   course.trainer?.id   || "",
+      locationId:  course.location?.id  || "",
+      dayOfWeek:   course.dayOfWeek     || "MONDAY",
+      startTime:   course.startTime?.slice(0, 5) || "09:00",
+      duration:    course.duration      || 60,
+      maxCapacity: course.maxCapacity   || 20,
+      recurring:   course.recurring     ?? true,
+    });
+    setShowForm(true);
+    setError(""); setSuccess("");
+  }
+
+  async function handleUpdateCourse(e) {
+    e.preventDefault();
+    setError(""); setSuccess("");
+    if (!courseForm.trainerId)  { setError("Please select a trainer.");  return; }
+    if (!courseForm.locationId) { setError("Please select a location."); return; }
+    try {
+      await updateCourse(editingCourse, buildCoursePayload(courseForm));
+      setCourseForm(EMPTY_COURSE_FORM);
+      setShowForm(false);
+      setEditingCourse(null);
+      setSuccess("Course updated successfully.");
+      loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Error updating course.");
+    }
+  }
+
+  async function handleDeleteCourse(id) {
+    if (!window.confirm("Delete this course?")) return;
+    setError(""); setSuccess("");
+    try {
+      await deleteCourse(id);
+      setSuccess("Course deleted.");
+      loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Error deleting course.");
+    }
+  }
+
+  const userList = tab === "trainers" ? trainers : receptionists;
 
   return (
     <div className="app-shell">
       <Sidebar />
       <main>
         <h1 className="section-title">Admin Panel</h1>
-        <p className="section-subtitle">Manage trainers and receptionists.</p>
+        <p className="section-subtitle">Manage trainers, receptionists and courses.</p>
 
         {/* Stats */}
         <div className="grid-2" style={{ marginBottom: 32 }}>
-          <StatCard title="Trainers"       value={trainers.filter(u => u.active).length}      subtitle="Active" icon={<Users size={20} />} />
-          <StatCard title="Receptionists"  value={receptionists.filter(u => u.active).length} subtitle="Active" icon={<Users size={20} />} />
+          <StatCard title="Trainers"      value={trainers.filter(u => u.active).length}      subtitle="Active" icon={<Users size={20} />} />
+          <StatCard title="Receptionists" value={receptionists.filter(u => u.active).length} subtitle="Active" icon={<Users size={20} />} />
         </div>
 
-        {/* Tabs + Add button */}
+        {/* Tabs */}
         <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
-          <button
-            className={tab === "trainers" ? "primary-btn" : "secondary-btn"}
-            onClick={() => { setTab("trainers"); setShowForm(false); setError(""); setSuccess(""); }}
-          >
-            Trainers
-          </button>
-          <button
-            className={tab === "receptionists" ? "primary-btn" : "secondary-btn"}
-            onClick={() => { setTab("receptionists"); setShowForm(false); setError(""); setSuccess(""); }}
-          >
-            Receptionists
-          </button>
+          {["trainers", "receptionists", "courses"].map(t => (
+            <button
+              key={t}
+              className={tab === t ? "primary-btn" : "secondary-btn"}
+              onClick={() => { setTab(t); setShowForm(false); setError(""); setSuccess(""); }}
+            >
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+
           <button
             className="primary-btn"
             style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}
-            onClick={() => { setShowForm(!showForm); setError(""); setSuccess(""); }}
+            onClick={() => {
+              setEditingCourse(null);
+              setCourseForm(EMPTY_COURSE_FORM);
+              setShowForm(!showForm);
+              setError(""); setSuccess("");
+            }}
           >
-            <UserPlus size={16} />
-            Add {tab === "trainers" ? "Trainer" : "Receptionist"}
+            {tab === "courses" ? <Plus size={16} /> : <UserPlus size={16} />}
+            Add {tab === "trainers" ? "Trainer" : tab === "receptionists" ? "Receptionist" : "Course"}
           </button>
         </div>
 
@@ -102,47 +200,95 @@ function AdminDashboard() {
         {error   && <div className="error-box" style={{ marginBottom: 16 }}>{error}</div>}
         {success && <div className="info-box"  style={{ marginBottom: 16 }}>{success}</div>}
 
-        {/* Add form */}
-        {showForm && (
+        {/* Add User Form */}
+        {showForm && tab !== "courses" && (
           <div className="card form-card" style={{ marginBottom: 24 }}>
             <h3 style={{ marginBottom: 20 }}>
               New {tab === "trainers" ? "Trainer" : "Receptionist"}
             </h3>
-            <form onSubmit={handleAdd}>
+            <form onSubmit={handleAddUser}>
               <label>First Name</label>
-              <input
-                placeholder="First name"
-                value={form.firstName}
-                onChange={e => setForm({ ...form, firstName: e.target.value })}
-                required
-              />
+              <input placeholder="First name" value={userForm.firstName} required
+                onChange={e => setUserForm({ ...userForm, firstName: e.target.value })} />
               <label>Last Name</label>
-              <input
-                placeholder="Last name"
-                value={form.lastName}
-                onChange={e => setForm({ ...form, lastName: e.target.value })}
-                required
-              />
+              <input placeholder="Last name" value={userForm.lastName} required
+                onChange={e => setUserForm({ ...userForm, lastName: e.target.value })} />
               <label>Email</label>
-              <input
-                type="email"
-                placeholder="email@example.com"
-                value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })}
-                required
-              />
+              <input type="email" placeholder="email@example.com" value={userForm.email} required
+                onChange={e => setUserForm({ ...userForm, email: e.target.value })} />
               <label>Password</label>
-              <input
-                type="password"
-                placeholder="Password"
-                value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
-                required
-              />
+              <input type="password" placeholder="Password" value={userForm.password} required
+                onChange={e => setUserForm({ ...userForm, password: e.target.value })} />
               <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
                 <button type="submit" className="primary-btn" style={{ flex: 1 }}>Save</button>
                 <button type="button" className="secondary-btn" style={{ flex: 1 }}
-                  onClick={() => { setShowForm(false); setForm(EMPTY_FORM); }}>
+                  onClick={() => { setShowForm(false); setUserForm(EMPTY_USER_FORM); }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Add / Edit Course Form */}
+        {showForm && tab === "courses" && (
+          <div className="card form-card" style={{ marginBottom: 24 }}>
+            <h3 style={{ marginBottom: 20 }}>{editingCourse ? "Edit Course" : "New Course"}</h3>
+            <form onSubmit={editingCourse ? handleUpdateCourse : handleAddCourse}>
+              <label>Name</label>
+              <input placeholder="Course name" value={courseForm.name} required
+                onChange={e => setCourseForm({ ...courseForm, name: e.target.value })} />
+
+              <label>Type</label>
+              <select value={courseForm.type}
+                onChange={e => setCourseForm({ ...courseForm, type: e.target.value })}
+                style={{ width: "100%", padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 14, marginBottom: 14, background: "#fffaf4", fontFamily: "inherit" }}>
+                {COURSE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <label>Trainer</label>
+              <select value={courseForm.trainerId}
+                onChange={e => setCourseForm({ ...courseForm, trainerId: e.target.value })}
+                style={{ width: "100%", padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 14, marginBottom: 14, background: "#fffaf4", fontFamily: "inherit" }}>
+                <option value="">-- Select trainer --</option>
+                {trainers.filter(t => t.active).map(t => (
+                  <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
+                ))}
+              </select>
+
+              <label>Location</label>
+              <select value={courseForm.locationId}
+                onChange={e => setCourseForm({ ...courseForm, locationId: e.target.value })}
+                style={{ width: "100%", padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 14, marginBottom: 14, background: "#fffaf4", fontFamily: "inherit" }}>
+                <option value="">-- Select location --</option>
+                {locations.map(l => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
+                ))}
+              </select>
+
+              <label>Day of Week</label>
+              <select value={courseForm.dayOfWeek}
+                onChange={e => setCourseForm({ ...courseForm, dayOfWeek: e.target.value })}
+                style={{ width: "100%", padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 14, marginBottom: 14, background: "#fffaf4", fontFamily: "inherit" }}>
+                {DAYS_OF_WEEK.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+
+              <label>Start Time</label>
+              <input type="time" value={courseForm.startTime}
+                onChange={e => setCourseForm({ ...courseForm, startTime: e.target.value })} />
+
+              <label>Duration (minutes)</label>
+              <input type="number" min="15" max="180" value={courseForm.duration}
+                onChange={e => setCourseForm({ ...courseForm, duration: e.target.value })} />
+
+              <label>Max Capacity</label>
+              <input type="number" min="1" value={courseForm.maxCapacity}
+                onChange={e => setCourseForm({ ...courseForm, maxCapacity: e.target.value })} />
+
+              <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                <button type="submit" className="primary-btn" style={{ flex: 1 }}>
+                  {editingCourse ? "Save changes" : "Save"}
+                </button>
+                <button type="button" className="secondary-btn" style={{ flex: 1 }}
+                  onClick={() => { setShowForm(false); setCourseForm(EMPTY_COURSE_FORM); setEditingCourse(null); }}>
                   Cancel
                 </button>
               </div>
@@ -150,59 +296,97 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* Table */}
-        <div className="card table-card">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {list.length === 0 ? (
+        {/* Users Table */}
+        {tab !== "courses" && (
+          <div className="card table-card">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={4} style={{ color: "var(--muted)" }}>No entries found.</td>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                list.map((u) => (
-                  <tr key={u.id}>
-                    <td><strong>{u.firstName} {u.lastName}</strong></td>
-                    <td style={{ color: "var(--muted)" }}>{u.email}</td>
-                    <td>
-                      <span style={{
-                        background: u.active ? "#d1fae5" : "#fee2e2",
-                        color:      u.active ? "#065f46" : "#991b1b",
-                        padding: "4px 12px",
-                        borderRadius: 999,
-                        fontSize: 12,
-                        fontWeight: 700,
-                      }}>
-                        {u.active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td>
-                      {u.active && (
-                        <button
-                          onClick={() => handleDeactivate(u.id)}
-                          style={{
-                            background: "none", color: "#dc2626",
-                            fontWeight: 700, cursor: "pointer",
-                            display: "flex", alignItems: "center", gap: 6,
-                          }}
-                        >
-                          <Trash2 size={15} /> Deactivate
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {userList.length === 0 ? (
+                  <tr><td colSpan={4} style={{ color: "var(--muted)" }}>No entries found.</td></tr>
+                ) : (
+                  userList.map(u => (
+                    <tr key={u.id}>
+                      <td><strong>{u.firstName} {u.lastName}</strong></td>
+                      <td style={{ color: "var(--muted)" }}>{u.email}</td>
+                      <td>
+                        <span style={{
+                          background: u.active ? "#d1fae5" : "#fee2e2",
+                          color:      u.active ? "#065f46" : "#991b1b",
+                          padding: "4px 12px", borderRadius: 999, fontSize: 12, fontWeight: 700,
+                        }}>
+                          {u.active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td>
+                        {u.active && (
+                          <button onClick={() => handleDeactivate(u.id)}
+                            style={{ background: "none", color: "#dc2626", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                            <Trash2 size={15} /> Deactivate
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Courses Table */}
+        {tab === "courses" && (
+          <div className="card table-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Trainer</th>
+                  <th>Day</th>
+                  <th>Time</th>
+                  <th>Capacity</th>
+                  <th style={{ minWidth: 130 }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {courses.length === 0 ? (
+                  <tr><td colSpan={7} style={{ color: "var(--muted)" }}>No courses found.</td></tr>
+                ) : (
+                  courses.map(c => (
+                    <tr key={c.id}>
+                      <td><strong>{c.name}</strong></td>
+                      <td style={{ color: "var(--muted)" }}>{c.type}</td>
+                      <td>{c.trainer ? `${c.trainer.firstName} ${c.trainer.lastName}` : "—"}</td>
+                      <td style={{ color: "var(--muted)" }}>{c.dayOfWeek}</td>
+                      <td style={{ color: "var(--muted)" }}>{c.startTime?.slice(0, 5)}</td>
+                      <td>{c.currentOccupancy}/{c.maxCapacity}</td>
+                      <td>
+                        <div style={{ display: "flex", gap: 12 }}>
+                          <button onClick={() => handleEditClick(c)}
+                            style={{ background: "none", color: "var(--accent)", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                            <Pencil size={15} /> Edit
+                          </button>
+                          <button onClick={() => handleDeleteCourse(c.id)}
+                            style={{ background: "none", color: "#dc2626", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                            <Trash2 size={15} /> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
     </div>
   );
