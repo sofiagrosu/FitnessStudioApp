@@ -1,7 +1,23 @@
-import { Link } from "react-router-dom";
-import { Dumbbell } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Dumbbell, LogOut } from "lucide-react";
+import { getCurrentUser, logoutUser } from "../services/authService";
+
+function redirectByRole(role) {
+  if (role === "TRAINER")      return "/trainer/dashboard";
+  if (role === "ADMIN")        return "/admin/dashboard";
+  if (role === "RECEPTIONIST") return "/receptionist/dashboard";
+  return "/dashboard";
+}
 
 function Navbar() {
+  const navigate = useNavigate();
+  const user = getCurrentUser();
+
+  function handleLogout() {
+    logoutUser();
+    navigate("/login");
+  }
+
   return (
     <header className="navbar">
       <Link to="/" className="brand">
@@ -19,8 +35,29 @@ function Navbar() {
       </nav>
 
       <div className="nav-actions">
-        <Link to="/login" className="nav-login">Login</Link>
-        <Link to="/register" className="nav-join">Join now</Link>
+        {user ? (
+          <>
+            <span
+              onClick={() => navigate(redirectByRole(user.role))}
+              style={{ fontSize: 14, fontWeight: 600, cursor: "pointer", color: "var(--accent)" }}
+            >
+              {user.firstName} {user.lastName}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="nav-login"
+              style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", background: "none", border: "none" }}
+            >
+              <LogOut size={15} />
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link to="/login" className="nav-login">Login</Link>
+            <Link to="/register" className="nav-join">Join now</Link>
+          </>
+        )}
       </div>
     </header>
   );

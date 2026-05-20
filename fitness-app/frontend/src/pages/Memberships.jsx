@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
 import PlanCard from "../components/PlanCard";
 import { createSubscription, getActiveSubscription, cancelSubscription } from "../services/subscriptionService";
 import { registerPayment } from "../services/paymentService";
@@ -30,7 +31,6 @@ function Memberships() {
   async function choosePlan(plan) {
     if (!user) { setMessage("You must be logged in to choose a plan."); return; }
     if (subscription) { setMessage("You already have an active subscription."); return; }
-
     try {
       const res = await createSubscription(user.id, plan.type, Number(plan.price));
       setSubscription(res.data);
@@ -66,12 +66,41 @@ function Memberships() {
     }
   }
 
+  // ── Vizitator nelogat — vitrină read-only ──────────────────
+  if (!user) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ padding: "2rem" }}>
+          <h1 className="section-title">Memberships</h1>
+          <p className="section-subtitle">Choose the plan that fits your goals.</p>
+          <div className="grid-3">
+            {plans.map((plan, index) => (
+              <div className={`plan-card card ${index === 1 ? "featured-plan" : ""}`} key={plan.type}>
+                {index === 1 && <span className="plan-badge">Most popular</span>}
+                <h3>{plan.name}</h3>
+                <div className="plan-price">{plan.price}<span> RON / month</span></div>
+                <div className="plan-features">
+                  {plan.features.map((f) => (
+                    <div className="plan-feature" key={f}>
+                      <span>✓</span><span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  // ── Member logat ───────────────────────────────────────────
   if (loading) return <div className="app-shell"><Sidebar /><main><p>Loading...</p></main></div>;
 
   return (
     <div className="app-shell">
       <Sidebar />
-
       <main>
         <h1 className="section-title">Memberships</h1>
         <p className="section-subtitle">Choose or manage your subscription.</p>

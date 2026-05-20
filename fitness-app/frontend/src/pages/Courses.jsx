@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
 import { getCourses, joinCourse, getMemberCourses, getCourseSignups, getCourseWaitlist, leaveCourse } from "../services/courseService";
 import { getCurrentUser } from "../services/authService";
 import { Clock, MapPin, User, CalendarDays } from "lucide-react";
@@ -56,6 +57,7 @@ function Courses() {
   const [loadingId, setLoadingId]         = useState(null); // courseId being processed
 
   const user = getCurrentUser();
+  const isMember = user?.role === "MEMBER";
 
   useEffect(() => {
     loadAll();
@@ -63,7 +65,7 @@ function Courses() {
 
   async function loadAll() {
     await loadCourses();
-    if (user) await loadEnrolled();
+    if (isMember) await loadEnrolled();
   }
 
   async function loadCourses() {
@@ -97,8 +99,8 @@ function Courses() {
   }
 
   async function handleJoin(courseId) {
-    if (!user) {
-      setMessage("You must be logged in to join a class.");
+    if (!isMember) {
+      setMessage("You must be logged in as a member to join a class.");
       return;
     }
 
@@ -160,6 +162,50 @@ function Courses() {
     }
   }
 
+  if (!user) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ padding: "2rem" }}>
+          <h1 className="section-title">Classes</h1>
+          <p className="section-subtitle">Browse classes, trainers, schedule and occupancy.</p>
+          <div className="grid-2">
+            {courses.map((course) => {
+              const percent = Math.round(((course.currentOccupancy || 0) / course.maxCapacity) * 100);
+              return (
+                <div className="course-card card" key={course.id}>
+                  <div className="course-image">
+                    <img src={course.image} alt={course.name} />
+                  </div>
+                  <div className="course-content">
+                    <div className="course-top">
+                      <div><h3>{course.name}</h3><p>{course.type}</p></div>
+                      <span className="tag">{percent >= 100 ? "Full" : "Available"}</span>
+                    </div>
+                    <div className="course-info">
+                      <span><User size={15} /> {course.trainerName}</span>
+                      <span>{course.trainerInfo}</span>
+                      <span><CalendarDays size={15} /> {course.dayOfWeek}</span>
+                      <span><Clock size={15} /> {course.startTime} · {course.duration} min</span>
+                      <span><MapPin size={15} /> {course.locationName}</span>
+                    </div>
+                    <div className="occupancy">
+                      <div className="occupancy-row">
+                        <span>{course.currentOccupancy}/{course.maxCapacity} spots</span>
+                        <span>{percent}% full</span>
+                      </div>
+                      <div className="progress"><div style={{ width: `${Math.min(percent, 100)}%` }} /></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </main>
+      </>
+    );
+  }
+
   return (
     <div className="app-shell">
       <Sidebar />
@@ -216,23 +262,25 @@ function Courses() {
                     </div>
                   </div>
 
-                  {isEnrolled ? (
-                    <button
-                      className="primary-btn course-btn"
-                      onClick={() => handleLeave(course.id)}
-                      disabled={isLoading}
-                      style={{ background: "#e74c3c" }}
-                    >
-                      {isLoading ? "Processing..." : "Leave class"}
-                    </button>
-                  ) : (
-                    <button
-                      className="primary-btn course-btn"
-                      onClick={() => handleJoin(course.id)}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Processing..." : isFull ? "Join waitlist" : "Join class"}
-                    </button>
+                  {isMember && (
+                    isEnrolled ? (
+                      <button
+                        className="primary-btn course-btn"
+                        onClick={() => handleLeave(course.id)}
+                        disabled={isLoading}
+                        style={{ background: "#e74c3c" }}
+                      >
+                        {isLoading ? "Processing..." : "Leave class"}
+                      </button>
+                    ) : (
+                      <button
+                        className="primary-btn course-btn"
+                        onClick={() => handleJoin(course.id)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Processing..." : isFull ? "Join waitlist" : "Join class"}
+                      </button>
+                    )
                   )}
                 </div>
               </div>

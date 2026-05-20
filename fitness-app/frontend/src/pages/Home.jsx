@@ -5,10 +5,10 @@ import {
   MapPin,
   ShieldCheck,
   Users,
+  Check,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
-import PlanCard from "../components/PlanCard";
 
 const heroImage =
   "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1400&auto=format&fit=crop";
@@ -188,7 +188,6 @@ function Home() {
 
                 <div className="class-meta">
                   <span>{item.time}</span>
-                  <strong>{item.spots}</strong>
                 </div>
               </div>
             ))}
@@ -210,12 +209,45 @@ function Home() {
           </div>
 
           <div className="grid-3">
-            {plans.map((plan) => (
-              <PlanCard
-                key={plan.name}
-                plan={plan}
-                featured={plan.name === "THREE_MONTHS"}
-              />
+            {plans.map((plan, index) => (
+              <div className={`plan-card card ${index === 1 ? "featured-plan" : ""}`} key={plan.name}>
+                {index === 1 && <span className="plan-badge">Most popular</span>}
+                <h3>{plan.name}</h3>
+                <div className="plan-price">{plan.price}<span> RON / month</span></div>
+                <div className="plan-features">
+                  {plan.features.map((f) => (
+                    <div className="plan-feature" key={f}>
+                      <Check size={16} /><span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="home-section">
+          <div className="section-header">
+            <div>
+              <h2>Our Locations</h2>
+              <p>Premium gyms across the city.</p>
+            </div>
+            <Link to="/locations">View all</Link>
+          </div>
+
+          <div className="grid-3">
+            {[
+              { name: "Central Gym",  address: "Str. Avram Iancu 20, Cluj-Napoca",      image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop" },
+              { name: "Zorilor Gym",  address: "Str. Observatorului 123, Cluj-Napoca",  image: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?q=80&w=1200&auto=format&fit=crop" },
+              { name: "Mărăști Gym", address: "Str. Fabricii 10, Cluj-Napoca",          image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop" },
+            ].map((loc) => (
+              <div className="location-card card" key={loc.name}>
+                <div className="empty-image">
+                  <img src={loc.image} alt={loc.name} />
+                </div>
+                <h3>{loc.name}</h3>
+                <p>{loc.address}</p>
+              </div>
             ))}
           </div>
         </section>

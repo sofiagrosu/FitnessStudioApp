@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
+import { getCurrentUser } from "../services/authService";
 import { getLocations } from "../services/locationService";
 
 function Locations() {
   const [locations, setLocations] = useState([]);
   const [message, setMessage] = useState("");
+  const user = getCurrentUser();
 
   const demoLocations = [
     {
@@ -53,32 +56,39 @@ function Locations() {
     load();
   }, []);
 
+  const content = (
+    <>
+      <h1 className="section-title">Locations</h1>
+      <p className="section-subtitle">Explore premium locations.</p>
+      {message && <div className="info-box">{message}</div>}
+      <div className="grid-3">
+        {locations.map((loc) => (
+          <div className="location-card card" key={loc.id}>
+            <div className="empty-image">
+              <img src={loc.image} alt={loc.name} />
+            </div>
+            <h3>{loc.name}</h3>
+            <p>{loc.address || "Premium fitness location"}</p>
+            <span className="tag">ID: {loc.id}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
+  if (!user) {
+    return (
+      <>
+        <Navbar />
+        <main style={{ padding: "2rem" }}>{content}</main>
+      </>
+    );
+  }
+
   return (
     <div className="app-shell">
       <Sidebar />
-
-      <main>
-        <h1 className="section-title">Locations</h1>
-        <p className="section-subtitle">Explore premium locations.</p>
-
-        {message && <div className="info-box">{message}</div>}
-
-        <div className="grid-3">
-          {locations.map((loc) => (
-            <div className="location-card card" key={loc.id}>
-              <div className="empty-image">
-                <img src={loc.image} alt={loc.name} />
-              </div>
-
-              <h3>{loc.name}</h3>
-
-              <p>{loc.address || "Premium fitness location"}</p>
-
-              <span className="tag">ID: {loc.id}</span>
-            </div>
-          ))}
-        </div>
-      </main>
+      <main>{content}</main>
     </div>
   );
 }
