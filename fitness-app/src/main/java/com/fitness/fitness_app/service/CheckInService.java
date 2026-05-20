@@ -1,15 +1,21 @@
 package com.fitness.fitness_app.service;
 
+import com.fitness.fitness_app.controller.CheckInsController;
 import com.fitness.fitness_app.exception.ConflictException;
 import com.fitness.fitness_app.exception.NotFoundException;
 import com.fitness.fitness_app.exception.ValidationException;
 import com.fitness.fitness_app.model.CheckIn;
 import com.fitness.fitness_app.model.CheckInResult;
+import com.fitness.fitness_app.model.Course;
 import com.fitness.fitness_app.model.Location;
 import com.fitness.fitness_app.model.Member;
+import com.fitness.fitness_app.model.SignUp;
 import com.fitness.fitness_app.model.Zone;
 import com.fitness.fitness_app.repository.CheckInsRepository;
 import com.fitness.fitness_app.repository.LocationRepository;
+import com.fitness.fitness_app.repository.SignUpsRepository;
+
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,17 +28,156 @@ public class CheckInService {
     private final MemberService memberService;
     private final SubscriptionService subscriptionService;
     private final LocationRepository locationRepository;
+    private final CoursesService coursesService;
+private final SignUpsRepository signUpsRepository;
 
     public CheckInService(CheckInsRepository checkInsRepository,
                           MemberService memberService,
                           SubscriptionService subscriptionService,
-                          LocationRepository locationRepository) {
+                          LocationRepository locationRepository,
+                          CoursesService coursesService,
+                          SignUpsRepository signUpsRepository) {
         this.checkInsRepository = checkInsRepository;
         this.memberService = memberService;
         this.subscriptionService = subscriptionService;
         this.locationRepository = locationRepository;
+        this.coursesService = coursesService;
+        this.signUpsRepository = signUpsRepository;
+    }
+public CheckInsController.MemberCheckInInfoResponse
+getMemberInfoByUniqueCode(String uniqueCode){
+
+    Member member=memberService.findByQrCode(uniqueCode);
+
+    List<Course> courses=
+            coursesService.getCoursesForMember(member.getId());
+
+    List<CheckInsController.ClassReservationResponse>
+            reservations=
+
+            courses.stream()
+                    .map(course ->
+                            new CheckInsController.ClassReservationResponse(
+                                    course.getId(),
+                                    course.getId(),
+                                    course.getName(),
+                                    course.getTrainer().getFirstName()
+                                            +" "
+                                            +course.getTrainer().getLastName(),
+                                    course.getDayOfWeek().toString(),
+                                    course.getStartTime().toString(),
+                                    course.getStartTime()
+                                            .plusMinutes(course.getDuration())
+                                            .toString(),
+                                    course.getLocation().getName()
+                            ))
+                    .toList();
+
+    return new CheckInsController
+            .MemberCheckInInfoResponse(
+                    member.getId(),
+                    member.getFirstName(),
+                    member.getLastName(),
+                    member.getQrCode(),
+                    reservations
+            );
+}
+public CheckInResult checkInToClass(
+        Long memberId,
+        Long reservationId
+){
+
+    Member member=
+            memberService.getMemberById(memberId);
+
+    SignUp reservation=
+            signUpsRepository.findById(reservationId)
+                    .orElseThrow(() ->
+                            new NotFoundException(
+                                    "Reservation not found"));
+
+    if(!reservation.getMemberId().equals(memberId)){
+        return CheckInResult.red(
+                "Reservation does not belong to member");
     }
 
+    if(!subscriptionService.hasValidAccess(memberId)){
+        return CheckInResult.red(
+                "Subscription invalid");
+    }
+
+    if(!checkInsRepository
+            .findByMember_IdAndCheckOutTimeIsNull(memberId)
+            .isEmpty()){
+
+        return CheckInResult.red(
+                "Member already checked in");
+    }
+
+    Course course=
+            reservation.getCourse();
+
+    CheckIn checkIn=
+            new CheckIn(
+                    member,
+                    course.getLocation(),
+                    null,
+                    course,
+                    LocalDateTime.now(),
+                    null
+            );
+
+    CheckIn saved=
+            checkInsRepository.save(checkIn);
+
+    return CheckInResult.green(
+            "Check-in successful",
+            saved
+    );
+}
+public CheckInResult checkInToFitnessZone(
+        Long memberId,
+        Long locationId,
+        Long zoneId
+){
+
+    Member member=
+            memberService.getMemberById(memberId);
+
+    Location location=
+            validateLocation(locationId);
+
+    Zone zone=
+            location.getZones()
+                    .stream()
+                    .filter(z ->
+                            z.getId().equals(zoneId))
+                    .findFirst()
+                    .orElseThrow();
+
+    if(!subscriptionService.hasValidAccess(memberId)){
+        return CheckInResult.red(
+                "Subscription invalid");
+    }
+
+    CheckIn checkIn=
+            new CheckIn(
+                    member,
+                    location,
+                    zone,
+                    null,
+                    LocalDateTime.now(),
+                    null
+            );
+
+    CheckIn saved=
+            checkInsRepository.save(checkIn);
+
+    return CheckInResult.green(
+            "Fitness check-in successful",
+            saved
+    );
+}
     public CheckInResult checkInByQrCode(String qrCode,
                                          Long locationId,
                                          Long zoneId) {

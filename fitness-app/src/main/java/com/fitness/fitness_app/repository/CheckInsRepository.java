@@ -16,4 +16,10 @@ public interface CheckInsRepository extends JpaRepository<CheckIn, Long> {
     List<CheckIn> findByZone_Id(Long zoneId);
 
     List<CheckIn> findByMember_IdAndCheckOutTimeIsNull(Long memberId);
+   
+
+CheckIn findFirstByMember_IdAndCourse_IdAndCheckOutTimeIsNull(
+        Long memberId,
+        Long courseId
+);
 }
