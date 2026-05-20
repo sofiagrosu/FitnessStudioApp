@@ -1,7 +1,7 @@
 import api from "./api";
 
-export const checkIn              = (qrCode, locationId, zoneId) =>
-  api.post("/checkins/qr", { qrCode, locationId, zoneId });
+export const checkIn              = (qrCode, locationId) =>
+  api.post("/checkins/qr", { qrCode, locationId });
 
 export const checkOut             = (checkInId)  => api.put(`/checkins/${checkInId}/checkout`);
 export const getMemberCheckIns    = (memberId)   => api.get(`/checkins/member/${memberId}`);

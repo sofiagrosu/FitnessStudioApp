@@ -10,7 +10,6 @@ const memberLinks = [
   { path: "/courses",     label: "Classes",      icon: Dumbbell },
   { path: "/memberships", label: "Memberships",  icon: CalendarDays },
   { path: "/payments",    label: "Payments",     icon: CreditCard },
-  { path: "/checkins",    label: "Check-ins",    icon: CheckCircle },
   { path: "/locations",   label: "Locations",    icon: MapPin },
   { path: "/profile",     label: "Profile",      icon: User },
 ];

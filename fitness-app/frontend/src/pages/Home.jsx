@@ -148,7 +148,7 @@ function Home() {
             <MapPin />
             <h4>Locations</h4>
             <p>
-              Find gyms, zones and occupancy.
+              Find gyms and occupancy.
             </p>
           </div>
         </section>

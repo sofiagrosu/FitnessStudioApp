@@ -7,7 +7,6 @@ import Dashboard       from "./pages/Dashboard";
 import Courses         from "./pages/Courses";
 import Memberships     from "./pages/Memberships";
 import Payments        from "./pages/Payments";
-import CheckIns        from "./pages/CheckIns";
 import Locations       from "./pages/Locations";
 import Profile         from "./pages/Profile";
 import TrainerDashboard      from "./pages/TrainerDashboard";
@@ -27,7 +26,6 @@ function App() {
       <Route path="/courses"     element={<Courses />} />
       <Route path="/memberships" element={<Memberships />} />
       <Route path="/payments"    element={<ProtectedRoute allowedRoles={["MEMBER"]}><Payments /></ProtectedRoute>} />
-      <Route path="/checkins"    element={<ProtectedRoute allowedRoles={["MEMBER"]}><CheckIns /></ProtectedRoute>} />
       <Route path="/locations"   element={<Locations />} />
       <Route path="/profile"     element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 

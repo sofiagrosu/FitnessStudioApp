@@ -58,6 +58,8 @@ public class MemberService {
             }
         }
 
+        validatePhone(updatedMember.getPhone());
+
         existingMember.setFirstName(updatedMember.getFirstName());
         existingMember.setLastName(updatedMember.getLastName());
         existingMember.setEmail(updatedMember.getEmail());
@@ -133,6 +135,14 @@ public class MemberService {
 
         if (member.getEmail() == null || member.getEmail().isBlank()) {
             throw new ValidationException("Email is required");
+        }
+
+        validatePhone(member.getPhone());
+    }
+
+    private void validatePhone(String phone) {
+        if (phone != null && !phone.isBlank() && !phone.matches("\\d{10}")) {
+            throw new ValidationException("Phone number must be exactly 10 digits");
         }
     }
 }

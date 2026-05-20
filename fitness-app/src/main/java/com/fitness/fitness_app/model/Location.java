@@ -2,9 +2,6 @@ package com.fitness.fitness_app.model;
 
 import jakarta.persistence.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name = "locations")
 public class Location {
@@ -16,13 +13,6 @@ public class Location {
     private String name;
 
     private String address;
-
-    @OneToMany(mappedBy = "location",
-               cascade = CascadeType.ALL,
-               orphanRemoval = true,
-               fetch = FetchType.EAGER)
-    private List<Zone> zones = new ArrayList<>();
-
 
     public Location() {}
 
@@ -49,19 +39,6 @@ public class Location {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public List<Zone> getZones() {
-        return zones;
-    }
-
-    public void setZones(List<Zone> zones) {
-        this.zones = zones;
-    }
-
-    public void addZone(Zone zone) {
-        zones.add(zone);
-        zone.setLocation(this);
     }
 
     @Override

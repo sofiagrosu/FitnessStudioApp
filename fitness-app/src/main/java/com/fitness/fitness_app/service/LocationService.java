@@ -45,7 +45,6 @@ public class LocationService {
 
         existingLocation.setName(location.getName());
         existingLocation.setAddress(location.getAddress());
-        existingLocation.setZones(location.getZones());
 
         return locationRepository.save(existingLocation);
     }

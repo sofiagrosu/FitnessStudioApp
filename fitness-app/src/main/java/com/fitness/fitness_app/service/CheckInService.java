@@ -7,7 +7,6 @@ import com.fitness.fitness_app.model.CheckIn;
 import com.fitness.fitness_app.model.CheckInResult;
 import com.fitness.fitness_app.model.Location;
 import com.fitness.fitness_app.model.Member;
-import com.fitness.fitness_app.model.Zone;
 import com.fitness.fitness_app.repository.CheckInsRepository;
 import com.fitness.fitness_app.repository.LocationRepository;
 import org.springframework.stereotype.Service;
@@ -33,24 +32,20 @@ public class CheckInService {
         this.locationRepository = locationRepository;
     }
 
-    public CheckInResult checkInByQrCode(String qrCode,
-                                         Long locationId,
-                                         Long zoneId) {
+    public CheckInResult checkInByQrCode(String qrCode, Long locationId) {
 
         if (qrCode == null || qrCode.isBlank()) {
             return CheckInResult.red("Invalid QR code. QR code is required.");
         }
 
         Location location;
-
         try {
-            location = validateLocationAndZone(locationId, zoneId);
+            location = validateLocation(locationId);
         } catch (RuntimeException e) {
             return CheckInResult.red(e.getMessage());
         }
 
         Member member;
-
         try {
             member = memberService.findByQrCode(qrCode);
         } catch (RuntimeException e) {
@@ -66,24 +61,16 @@ public class CheckInService {
         if (!checkInsRepository
                 .findByMember_IdAndCheckOutTimeIsNull(member.getId())
                 .isEmpty()) {
-
             return CheckInResult.red(
                     "Access denied. Member already has an open check-in."
             );
         }
-
-        Zone zone = location.getZones()
-                .stream()
-                .filter(z -> zoneId.equals(z.getId()))
-                .findFirst()
-                .orElseThrow();
 
         subscriptionService.registerEntryUsage(member.getId());
 
         CheckIn checkIn = new CheckIn(
                 member,
                 location,
-                zone,
                 LocalDateTime.now(),
                 null
         );
@@ -103,13 +90,10 @@ public class CheckInService {
         }
 
         CheckIn checkIn = checkInsRepository.findById(checkInId)
-                .orElseThrow(() ->
-                        new NotFoundException("Check-in not found"));
+                .orElseThrow(() -> new NotFoundException("Check-in not found"));
 
         if (checkIn.getCheckOutTime() != null) {
-            throw new ConflictException(
-                    "This check-in is already closed"
-            );
+            throw new ConflictException("This check-in is already closed");
         }
 
         checkIn.setCheckOutTime(LocalDateTime.now());
@@ -118,12 +102,10 @@ public class CheckInService {
     }
 
     public List<CheckIn> getOpenCheckInsByLocation(Long locationId) {
-
         validateLocation(locationId);
-
         return checkInsRepository.findByLocation_Id(locationId)
                 .stream()
-                .filter(c -> c.getCheckOutTime()==null)
+                .filter(c -> c.getCheckOutTime() == null)
                 .toList();
     }
 
@@ -132,53 +114,16 @@ public class CheckInService {
     }
 
     public List<CheckIn> getCheckInHistoryForMember(Long memberId) {
-
         memberService.getMemberById(memberId);
-
         return checkInsRepository.findByMember_Id(memberId);
     }
 
-    private Location validateLocationAndZone(Long locationId,
-                                             Long zoneId) {
-
-        Location location = validateLocation(locationId);
-
-        if (zoneId == null) {
-            throw new ValidationException(
-                    "Zone id is required"
-            );
-        }
-
-        boolean zoneExists =
-                location.getZones()!=null &&
-                location.getZones()
-                        .stream()
-                        .anyMatch(
-                                z -> zoneId.equals(z.getId())
-                        );
-
-        if (!zoneExists) {
-            throw new NotFoundException(
-                    "Zone not found in this location"
-            );
-        }
-
-        return location;
-    }
-
     private Location validateLocation(Long locationId) {
-
         if (locationId == null) {
-            throw new ValidationException(
-                    "Location id is required"
-            );
+            throw new ValidationException("Location id is required");
         }
-
         return locationRepository
                 .findById(locationId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                "Location not found"
-                        ));
+                .orElseThrow(() -> new NotFoundException("Location not found"));
     }
 }

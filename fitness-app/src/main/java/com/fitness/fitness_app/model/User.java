@@ -27,6 +27,8 @@ public abstract class User implements UserI {
 
     protected String lastName;
 
+    protected String phone;
+
     public User(){}
 
     @Override
@@ -87,6 +89,14 @@ public abstract class User implements UserI {
 
     public void setLastName(String lastName){
         this.lastName=lastName;
+    }
+
+    public String getPhone(){
+        return phone;
+    }
+
+    public void setPhone(String phone){
+        this.phone=phone;
     }
 
     public void setRole(Role role){

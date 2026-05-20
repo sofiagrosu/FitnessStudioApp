@@ -125,9 +125,12 @@ public class AdminService {
                 throw new ConflictException("Email already used by another user");
         }
 
+        validatePhone(updatedTrainer.getPhone());
+
         existing.setFirstName(updatedTrainer.getFirstName());
         existing.setLastName(updatedTrainer.getLastName());
         existing.setEmail(updatedTrainer.getEmail());
+        existing.setPhone(updatedTrainer.getPhone());
 
         if (updatedTrainer.getPassword() != null && !updatedTrainer.getPassword().isBlank()) {
             existing.setPassword(updatedTrainer.getPassword());
@@ -175,14 +178,23 @@ public class AdminService {
                 throw new ConflictException("Email already used by another user");
         }
 
+        validatePhone(updatedReceptionist.getPhone());
+
         existing.setFirstName(updatedReceptionist.getFirstName());
         existing.setLastName(updatedReceptionist.getLastName());
         existing.setEmail(updatedReceptionist.getEmail());
+        existing.setPhone(updatedReceptionist.getPhone());
 
         if (updatedReceptionist.getPassword() != null && !updatedReceptionist.getPassword().isBlank()) {
             existing.setPassword(updatedReceptionist.getPassword());
         }
 
         return userRepo.save(existing);
+    }
+
+    private void validatePhone(String phone) {
+        if (phone != null && !phone.isBlank() && !phone.matches("\\d{10}")) {
+            throw new ValidationException("Phone number must be exactly 10 digits");
+        }
     }
 }

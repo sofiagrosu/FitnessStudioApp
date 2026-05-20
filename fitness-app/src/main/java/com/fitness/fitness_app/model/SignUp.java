@@ -23,15 +23,12 @@ public class SignUp {
 
     private LocalDateTime bookingTime;
 
-    private Boolean attended;
-
     public SignUp() {}
 
-    public SignUp(Course course, Member member, LocalDateTime bookingTime, Boolean attended) {
+    public SignUp(Course course, Member member, LocalDateTime bookingTime) {
         this.course = course;
         this.member = member;
         this.bookingTime = bookingTime;
-        this.attended = attended;
     }
 
     public Long getId() {
@@ -72,21 +69,12 @@ public class SignUp {
         this.bookingTime = bookingTime;
     }
 
-    public Boolean getAttended() {
-        return attended;
-    }
-
-    public void setAttended(Boolean attended) {
-        this.attended = attended;
-    }
-
     @Override
     public String toString() {
         return "SignUp{" +
                 "courseId=" + getCourseId() +
                 ", memberId=" + getMemberId() +
                 ", bookingTime=" + bookingTime +
-                ", attended=" + attended +
                 '}';
     }
 }

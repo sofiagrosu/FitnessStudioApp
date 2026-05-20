@@ -20,21 +20,16 @@ public class CheckIn {
     @JoinColumn(name = "location_id")
     private Location location;
 
-    @ManyToOne
-    @JoinColumn(name = "zone_id")
-    private Zone zone;
-
     private LocalDateTime checkInTime;
 
     private LocalDateTime checkOutTime;
 
     public CheckIn() {}
 
-    public CheckIn(Member member, Location location, Zone zone,
+    public CheckIn(Member member, Location location,
                    LocalDateTime checkInTime, LocalDateTime checkOutTime) {
         this.member = member;
         this.location = location;
-        this.zone = zone;
         this.checkInTime = checkInTime;
         this.checkOutTime = checkOutTime;
     }
@@ -59,24 +54,12 @@ public class CheckIn {
         this.location = location;
     }
 
-    public Zone getZone() {
-        return zone;
-    }
-
-    public void setZone(Zone zone) {
-        this.zone = zone;
-    }
-
     public Long getMemberId() {
         return member == null ? null : member.getId();
     }
 
     public Long getLocationId() {
         return location == null ? null : location.getId();
-    }
-
-    public Long getZoneId() {
-        return zone == null ? null : zone.getId();
     }
 
     public LocalDateTime getCheckInTime() {

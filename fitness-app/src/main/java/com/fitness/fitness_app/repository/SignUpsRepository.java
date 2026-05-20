@@ -15,11 +15,7 @@ public interface SignUpsRepository extends JpaRepository<SignUp, Long> {
 
     SignUp findByCourse_IdAndMember_Id(Long courseId, Long memberId);
 
-    List<SignUp> findByAttendedTrue();
-
-    List<SignUp> findByAttendedFalse();
-
-    List<SignUp> findAllByOrderByBookingTimeAsc();
+List<SignUp> findAllByOrderByBookingTimeAsc();
 
     List<SignUp> findAllByOrderByCourse_IdAsc();
 

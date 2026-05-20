@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import StatCard from "../components/StatCard";
 import { Users, Trash2, UserPlus, Plus, Pencil } from "lucide-react";
-import { getAllTrainers, getAllReceptionists, addUser, deactivateUser } from "../services/adminService";
+import { getAllTrainers, getAllReceptionists, addUser, deactivateUser, updateTrainer, updateReceptionist } from "../services/adminService";
 import { getCourses, createCourse, updateCourse, deleteCourse } from "../services/courseService";
 import { getLocations } from "../services/locationService";
 
-const EMPTY_USER_FORM = { firstName: "", lastName: "", email: "", password: "" };
+const EMPTY_USER_FORM = { firstName: "", lastName: "", email: "", password: "", phone: "" };
 
 const EMPTY_COURSE_FORM = {
   name: "", type: "YOGA", trainerId: "", locationId: "",
@@ -24,7 +24,8 @@ function AdminDashboard() {
   const [locations, setLocations]         = useState([]);
   const [tab, setTab]                     = useState("trainers");
   const [showForm, setShowForm]           = useState(false);
-  const [editingCourse, setEditingCourse] = useState(null); // course being edited
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [editingUser, setEditingUser]     = useState(null); // user being edited
   const [userForm, setUserForm]           = useState(EMPTY_USER_FORM);
   const [courseForm, setCourseForm]       = useState(EMPTY_COURSE_FORM);
   const [error, setError]                 = useState("");
@@ -62,6 +63,32 @@ function AdminDashboard() {
       loadData();
     } catch (err) {
       setError(err.response?.data?.message || "Error adding user.");
+    }
+  }
+
+  function handleUserEditClick(user) {
+    setEditingUser(user);
+    setUserForm({ firstName: user.firstName, lastName: user.lastName, email: user.email, password: "", phone: user.phone ?? "" });
+    setShowForm(true);
+    setError(""); setSuccess("");
+  }
+
+  async function handleUpdateUser(e) {
+    e.preventDefault();
+    setError(""); setSuccess("");
+    try {
+      if (tab === "trainers") {
+        await updateTrainer(editingUser.id, userForm);
+      } else {
+        await updateReceptionist(editingUser.id, userForm);
+      }
+      setUserForm(EMPTY_USER_FORM);
+      setShowForm(false);
+      setEditingUser(null);
+      setSuccess(`${tab === "trainers" ? "Trainer" : "Receptionist"} updated successfully.`);
+      loadData();
+    } catch (err) {
+      setError(err.response?.data?.message || "Error updating user.");
     }
   }
 
@@ -175,7 +202,7 @@ function AdminDashboard() {
             <button
               key={t}
               className={tab === t ? "primary-btn" : "secondary-btn"}
-              onClick={() => { setTab(t); setShowForm(false); setError(""); setSuccess(""); }}
+              onClick={() => { setTab(t); setShowForm(false); setEditingUser(null); setEditingCourse(null); setError(""); setSuccess(""); }}
             >
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -185,9 +212,12 @@ function AdminDashboard() {
             className="primary-btn"
             style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}
             onClick={() => {
+              const wasEditing = editingUser !== null || editingCourse !== null;
               setEditingCourse(null);
+              setEditingUser(null);
               setCourseForm(EMPTY_COURSE_FORM);
-              setShowForm(!showForm);
+              setUserForm(EMPTY_USER_FORM);
+              setShowForm(wasEditing ? true : !showForm);
               setError(""); setSuccess("");
             }}
           >
@@ -204,9 +234,11 @@ function AdminDashboard() {
         {showForm && tab !== "courses" && (
           <div className="card form-card" style={{ marginBottom: 24 }}>
             <h3 style={{ marginBottom: 20 }}>
-              New {tab === "trainers" ? "Trainer" : "Receptionist"}
+              {editingUser
+                ? `Edit ${tab === "trainers" ? "Trainer" : "Receptionist"}`
+                : `New ${tab === "trainers" ? "Trainer" : "Receptionist"}`}
             </h3>
-            <form onSubmit={handleAddUser}>
+            <form onSubmit={editingUser ? handleUpdateUser : handleAddUser}>
               <label>First Name</label>
               <input placeholder="First name" value={userForm.firstName} required
                 onChange={e => setUserForm({ ...userForm, firstName: e.target.value })} />
@@ -216,13 +248,23 @@ function AdminDashboard() {
               <label>Email</label>
               <input type="email" placeholder="email@example.com" value={userForm.email} required
                 onChange={e => setUserForm({ ...userForm, email: e.target.value })} />
-              <label>Password</label>
-              <input type="password" placeholder="Password" value={userForm.password} required
+              <label>Phone</label>
+              <input type="tel" placeholder="ex: 0740123456" value={userForm.phone}
+                pattern="\d{10}" maxLength={10}
+                title="Phone number must be exactly 10 digits"
+                onChange={e => setUserForm({ ...userForm, phone: e.target.value.replace(/\D/g, "") })} />
+              <label>{editingUser ? "New Password (leave blank to keep current)" : "Password"}</label>
+              <input type="password" placeholder={editingUser ? "Leave blank to keep current" : "Password"}
+                value={userForm.password} required={!editingUser}
                 onChange={e => setUserForm({ ...userForm, password: e.target.value })} />
               <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-                <button type="submit" className="primary-btn" style={{ flex: 1 }}>Save</button>
+                <button type="submit" className="primary-btn" style={{ flex: 1 }}>
+                  {editingUser ? "Save changes" : "Save"}
+                </button>
                 <button type="button" className="secondary-btn" style={{ flex: 1 }}
-                  onClick={() => { setShowForm(false); setUserForm(EMPTY_USER_FORM); }}>Cancel</button>
+                  onClick={() => { setShowForm(false); setUserForm(EMPTY_USER_FORM); setEditingUser(null); }}>
+                  Cancel
+                </button>
               </div>
             </form>
           </div>
@@ -326,12 +368,20 @@ function AdminDashboard() {
                         </span>
                       </td>
                       <td>
-                        {u.active && (
-                          <button onClick={() => handleDeactivate(u.id)}
-                            style={{ background: "none", color: "#dc2626", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                            <Trash2 size={15} /> Deactivate
-                          </button>
-                        )}
+                        <div style={{ display: "flex", gap: 12 }}>
+                          {u.active && (
+                            <>
+                              <button onClick={() => handleUserEditClick(u)}
+                                style={{ background: "none", color: "var(--accent)", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                                <Pencil size={15} /> Edit
+                              </button>
+                              <button onClick={() => handleDeactivate(u.id)}
+                                style={{ background: "none", color: "#dc2626", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                                <Trash2 size={15} /> Deactivate
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))

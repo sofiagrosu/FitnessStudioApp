@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import StatCard from "../components/StatCard";
 import { getCurrentUser } from "../services/authService";
-import { getTrainerSchedule, getEnrolledCount, getEnrolledSignUps, setAttendance } from "../services/trainerService";
+import { getTrainerSchedule, getEnrolledCount, getEnrolledSignUps } from "../services/trainerService";
 import { Dumbbell, Users, Clock, ChevronDown, ChevronUp } from "lucide-react";
 
 function TrainerDashboard() {
@@ -12,7 +12,6 @@ function TrainerDashboard() {
   const [signups, setSignups]     = useState({});
   const [expanded, setExpanded]   = useState(null);
   const [loading, setLoading]     = useState(true);
-  const [message, setMessage]     = useState("");
 
   useEffect(() => {
     async function load() {
@@ -49,19 +48,6 @@ function TrainerDashboard() {
     }
   }
 
-  async function handleAttendance(signUpId, courseId, attended) {
-    try {
-      await setAttendance(signUpId, attended);
-      setMessage("Prezență actualizată.");
-      // refresh signups for this course
-      const res = await getEnrolledSignUps(user.id, courseId);
-      setSignups(prev => ({ ...prev, [courseId]: res.data }));
-      setTimeout(() => setMessage(""), 3000);
-    } catch (e) {
-      setMessage("Eroare la actualizare.");
-    }
-  }
-
   const totalEnrolled = Object.values(enrolled).reduce(
     (sum, e) => sum + (e?.enrolledCount ?? 0), 0
   );
@@ -72,8 +58,6 @@ function TrainerDashboard() {
       <main>
         <h1 className="section-title">My Courses</h1>
         <p className="section-subtitle">Bine ai venit, {user?.firstName}. Iată programul tău.</p>
-
-        {message && <div className="info-box" style={{ marginBottom: 20 }}>{message}</div>}
 
         <div className="grid-2" style={{ marginBottom: 32 }}>
           <StatCard title="Total Courses"  value={courses.length}  subtitle="Assigned to you"              icon={<Dumbbell size={20} />} />
@@ -133,7 +117,6 @@ function TrainerDashboard() {
                             <tr>
                               <th>Membru ID</th>
                               <th>Data înscrierii</th>
-                              <th>Prezență</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -144,23 +127,6 @@ function TrainerDashboard() {
                                   {s.bookingTime ? new Date(
                                     s.bookingTime[0], s.bookingTime[1]-1, s.bookingTime[2]
                                   ).toLocaleDateString("ro-RO") : "—"}
-                                </td>
-                                <td>
-                                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                                    <span style={{
-                                      background: s.attended ? "#d1fae5" : "#fee2e2",
-                                      color: s.attended ? "#065f46" : "#991b1b",
-                                      padding: "3px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700
-                                    }}>
-                                      {s.attended ? "Prezent" : "Absent"}
-                                    </span>
-                                    <button
-                                      onClick={() => handleAttendance(s.id, c.id, !s.attended)}
-                                      style={{ background: "none", color: "var(--accent)", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-                                    >
-                                      {s.attended ? "Marchează absent" : "Marchează prezent"}
-                                    </button>
-                                  </div>
                                 </td>
                               </tr>
                             ))}

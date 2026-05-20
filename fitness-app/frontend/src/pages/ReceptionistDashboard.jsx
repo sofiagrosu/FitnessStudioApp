@@ -4,27 +4,23 @@ import StatCard from "../components/StatCard";
 import { getCurrentUser } from "../services/authService";
 import { checkIn, checkOut, getOpenCheckIns, getOccupancy } from "../services/checkInService";
 import { getLocations } from "../services/locationService";
-import { Users, QrCode, CheckCircle, LogOut } from "lucide-react";
+import { Users, CheckCircle, LogOut } from "lucide-react";
 
 function ReceptionistDashboard() {
   const user = getCurrentUser();
 
-  const [locations, setLocations]     = useState([]);
-  const [selectedLoc, setSelectedLoc] = useState("");
-  const [selectedZone, setSelectedZone] = useState("");
-  const [qrCode, setQrCode]           = useState("");
+  const [locations, setLocations]       = useState([]);
+  const [selectedLoc, setSelectedLoc]   = useState("");
+  const [qrCode, setQrCode]             = useState("");
   const [openCheckIns, setOpenCheckIns] = useState([]);
-  const [occupancy, setOccupancy]     = useState(null);
-  const [message, setMessage]         = useState(null);
-  const [error, setError]             = useState(null);
+  const [occupancy, setOccupancy]       = useState(null);
+  const [message, setMessage]           = useState(null);
+  const [error, setError]               = useState(null);
 
   useEffect(() => {
     getLocations().then(r => {
       setLocations(r.data);
-      if (r.data.length > 0) {
-        setSelectedLoc(r.data[0].id);
-        if (r.data[0].zones?.length > 0) setSelectedZone(r.data[0].zones[0].id);
-      }
+      if (r.data.length > 0) setSelectedLoc(r.data[0].id);
     });
   }, []);
 
@@ -47,17 +43,16 @@ function ReceptionistDashboard() {
   }
 
   const currentLocation = locations.find(l => l.id == selectedLoc);
-  const zones = currentLocation?.zones || [];
 
   async function handleCheckIn(e) {
     e.preventDefault();
     setMessage(null);
     setError(null);
     if (!qrCode.trim()) { setError("Introdu codul QR."); return; }
-    if (!selectedZone) { setError("Selectează zona."); return; }
     try {
-      const res = await checkIn(qrCode.trim(), Number(selectedLoc), Number(selectedZone));
-      setMessage(`✅ Check-in reușit: ${res.data.member?.firstName ?? ""} ${res.data.member?.lastName ?? ""}`);
+      const res = await checkIn(qrCode.trim(), Number(selectedLoc));
+      const checkedInMember = res.data.checkIn?.member;
+      setMessage(`✅ Check-in reușit: ${checkedInMember?.firstName ?? ""} ${checkedInMember?.lastName ?? ""}`.trim());
       setQrCode("");
       refreshCheckIns();
     } catch (err) {
@@ -112,23 +107,10 @@ function ReceptionistDashboard() {
               <label>Locație</label>
               <select
                 value={selectedLoc}
-                onChange={e => {
-                  setSelectedLoc(e.target.value);
-                  const loc = locations.find(l => l.id == e.target.value);
-                  setSelectedZone(loc?.zones?.[0]?.id ?? "");
-                }}
+                onChange={e => setSelectedLoc(e.target.value)}
                 style={{ width: "100%", padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 14, marginBottom: 14, background: "#fffaf4", fontFamily: "inherit" }}
               >
                 {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-              </select>
-
-              <label>Zonă</label>
-              <select
-                value={selectedZone}
-                onChange={e => setSelectedZone(e.target.value)}
-                style={{ width: "100%", padding: "14px 16px", border: "1px solid var(--border)", borderRadius: 14, marginBottom: 14, background: "#fffaf4", fontFamily: "inherit" }}
-              >
-                {zones.map(z => <option key={z.id} value={z.id}>{z.name} (max {z.maxCapacity})</option>)}
               </select>
 
               <label>Cod QR</label>
@@ -160,7 +142,7 @@ function ReceptionistDashboard() {
                 <thead>
                   <tr>
                     <th>Membru</th>
-                    <th>Zonă</th>
+                    <th>Locație</th>
                     <th>Acțiune</th>
                   </tr>
                 </thead>
@@ -168,7 +150,7 @@ function ReceptionistDashboard() {
                   {openCheckIns.map(c => (
                     <tr key={c.id}>
                       <td><strong>{c.member?.firstName} {c.member?.lastName}</strong></td>
-                      <td style={{ color: "var(--muted)" }}>{c.zone?.name ?? "—"}</td>
+                      <td style={{ color: "var(--muted)" }}>{currentLocation?.name ?? "—"}</td>
                       <td>
                         <button
                           onClick={() => handleCheckOut(c.id)}

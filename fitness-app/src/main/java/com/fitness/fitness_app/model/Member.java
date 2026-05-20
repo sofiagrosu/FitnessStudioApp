@@ -13,8 +13,6 @@ import jakarta.persistence.Table;
 @Table(name="members")
 public class Member extends User {
 
-    private String phone;
-
     @Column(unique=true)
     private String qrCode;
 
@@ -46,14 +44,6 @@ public class Member extends User {
     @Override
     public String getInformations(){
         return "Member: "+getName()+" ("+email+")";
-    }
-
-    public String getPhone(){
-        return phone;
-    }
-
-    public void setPhone(String phone){
-        this.phone=phone;
     }
 
     public String getQrCode(){

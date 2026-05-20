@@ -50,7 +50,6 @@ class FitnessFunctionalFlowTests {
     private Long courseId;
     private Long trainerId;
     private Long locationId;
-    private Long zoneId;
 
     @BeforeAll
     void cleanUpPreviousTestData() {
@@ -123,14 +122,7 @@ class FitnessFunctionalFlowTests {
             WHERE u.email = 'trainer.functional@test.com'
         """);
 
-        // 10. zonele locatiei de test (FK catre locations)
-        jdbcTemplate.update("""
-            DELETE z FROM zones z
-            JOIN locations l ON z.location_id = l.id
-            WHERE l.name = 'Centru' AND l.address = 'Str. Principala 1'
-        """);
-
-        // 11. locatia de test
+        // 10. locatia de test
         jdbcTemplate.update("""
             DELETE FROM locations
             WHERE name = 'Centru' AND address = 'Str. Principala 1'
@@ -149,6 +141,76 @@ class FitnessFunctionalFlowTests {
         """);
 
         // 13. randul din tabela de baza users
+        jdbcTemplate.update("""
+            DELETE FROM users
+            WHERE email IN ('trainer.functional@test.com','elena.functional@test.com','maria.functional@test.com')
+        """);
+    }
+
+    @AfterAll
+    void cleanUpAfterTests() {
+        jdbcTemplate.update("""
+            DELETE r FROM receipts r
+            JOIN payments p ON r.payment_id = p.id
+            JOIN users u ON p.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE we FROM waitlist_entries we
+            JOIN users u ON we.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE su FROM sign_ups su
+            JOIN users u ON su.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE ci FROM check_ins ci
+            JOIN users u ON ci.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE p FROM payments p
+            JOIN users u ON p.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE s FROM subscriptions s
+            JOIN users u ON s.member_id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE we FROM waitlist_entries we
+            JOIN courses c ON we.course_id = c.id
+            JOIN users u ON c.trainer_id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
+        jdbcTemplate.update("""
+            DELETE su FROM sign_ups su
+            JOIN courses c ON su.course_id = c.id
+            JOIN users u ON c.trainer_id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
+        jdbcTemplate.update("""
+            DELETE c FROM courses c
+            JOIN users u ON c.trainer_id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
+        jdbcTemplate.update("""
+            DELETE FROM locations
+            WHERE name = 'Centru' AND address = 'Str. Principala 1'
+        """);
+        jdbcTemplate.update("""
+            DELETE m FROM members m
+            JOIN users u ON m.id = u.id
+            WHERE u.email IN ('elena.functional@test.com','maria.functional@test.com')
+        """);
+        jdbcTemplate.update("""
+            DELETE t FROM trainers t
+            JOIN users u ON t.id = u.id
+            WHERE u.email = 'trainer.functional@test.com'
+        """);
         jdbcTemplate.update("""
             DELETE FROM users
             WHERE email IN ('trainer.functional@test.com','elena.functional@test.com','maria.functional@test.com')
@@ -189,19 +251,11 @@ class FitnessFunctionalFlowTests {
         location.setName("Centru");
         location.setAddress("Str. Principala 1");
 
-        Zone zone = new Zone();
-        zone.setName("Sala Cursuri");
-        zone.setMaxCapacity(15);
-
-        location.addZone(zone);
-
         Location savedLocation = locationRepository.save(location);
         this.locationId = savedLocation.getId();
-        this.zoneId = savedLocation.getZones().get(0).getId();
 
         assertNotNull(trainerId);
         assertNotNull(locationId);
-        assertNotNull(zoneId);
     }
 
     @Test
@@ -269,7 +323,7 @@ class FitnessFunctionalFlowTests {
         assertNotNull(receipt);
         assertTrue(receipt.getReceiptNumber().startsWith("REC-"));
 
-        CheckInResult result = checkInService.checkInByQrCode(memberQrCode, locationId, zoneId);
+        CheckInResult result = checkInService.checkInByQrCode(memberQrCode, locationId);
 
         assertTrue(result.isAllowed());
         assertEquals("GREEN", result.getScreenColor());
@@ -278,7 +332,7 @@ class FitnessFunctionalFlowTests {
         Subscription afterCheckIn = subscriptionService.getSubscriptionById(subscriptionId);
         assertEquals(9, afterCheckIn.getRemainingEntries());
 
-        CheckInResult duplicate = checkInService.checkInByQrCode(memberQrCode, locationId, zoneId);
+        CheckInResult duplicate = checkInService.checkInByQrCode(memberQrCode, locationId);
 
         assertFalse(duplicate.isAllowed());
         assertEquals("RED", duplicate.getScreenColor());
@@ -286,10 +340,6 @@ class FitnessFunctionalFlowTests {
         CheckIn closed = checkInService.checkOut(result.getCheckIn().getId());
         assertNotNull(closed.getCheckOutTime());
 
-        CheckInResult invalidZone = checkInService.checkInByQrCode(memberQrCode, locationId, 999999L);
-
-        assertFalse(invalidZone.isAllowed());
-        assertEquals("RED", invalidZone.getScreenColor());
     }
 
     @Test
@@ -368,21 +418,25 @@ class FitnessFunctionalFlowTests {
 
         Member registeredSecondMember = authService.register(secondMember);
 
+        // Give the second member a paid subscription so they can join a course
+        Subscription secondSubscription = subscriptionService.createSubscription(
+                registeredSecondMember.getId(),
+                SubscriptionType.MONTHLY,
+                150.0
+        );
+        paymentService.registerPayment(
+                registeredSecondMember.getId(),
+                secondSubscription.getId(),
+                150.0,
+                PaymentMethod.CARD
+        );
+
         String waitlistMessage = coursesService.createSignUp(registeredSecondMember.getId(), courseId);
 
         assertTrue(waitlistMessage.contains("waitlist"));
         assertEquals("WAITLISTED", coursesService.getSignUpStatus(courseId, registeredSecondMember.getId()).status());
         assertEquals(1, waitlistsRepository.findByCourse_IdOrderByPositionAsc(courseId).size());
 
-        assertTrue(signUpsRepository.findByAttendedFalse().size() >= 1);
-
-        coursesService.setMemberAttendance(enrolled.getId(), true);
-
-        assertTrue(signUpsRepository.findByAttendedTrue()
-                .stream()
-                .anyMatch(s -> enrolled.getId().equals(s.getId())));
-
-        assertEquals(1, coursesService.countAccumulatedAttendanceForMember(memberId));
     }
 
     private static Path createTestDataDirectory() {

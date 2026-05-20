@@ -3,6 +3,9 @@ package com.fitness.fitness_app.controller;
 import com.fitness.fitness_app.model.CheckIn;
 import com.fitness.fitness_app.model.CheckInResult;
 import com.fitness.fitness_app.service.CheckInService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,8 +22,8 @@ public class CheckInsController {
     }
 
     @PostMapping("/qr")
-    public ResponseEntity<CheckInResult> checkInByQrCode(@RequestBody CheckInRequest request) {
-        return ResponseEntity.ok(checkInService.checkInByQrCode(request.qrCode(), request.locationId(), request.zoneId()));
+    public ResponseEntity<CheckInResult> checkInByQrCode(@Valid @RequestBody CheckInRequest request) {
+        return ResponseEntity.ok(checkInService.checkInByQrCode(request.qrCode(), request.locationId()));
     }
 
     @PutMapping("/{checkInId}/checkout")
@@ -43,5 +46,11 @@ public class CheckInsController {
         return ResponseEntity.ok(checkInService.getCheckInHistoryForMember(memberId));
     }
 
-    public record CheckInRequest(String qrCode, Long locationId, Long zoneId) {}
+    public record CheckInRequest(
+            @NotBlank(message = "QR code is required")
+            String qrCode,
+
+            @NotNull(message = "Location ID is required")
+            Long locationId
+    ) {}
 }

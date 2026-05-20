@@ -59,12 +59,6 @@ public class CoursesController {
         return ResponseEntity.ok(coursesService.cancelSignUp(signUpId, memberId));
     }
 
-    @PatchMapping("/signups/{signUpId}/attendance")
-    public ResponseEntity<String> setAttendance(@PathVariable Long signUpId,
-                                                @RequestBody AttendanceRequest request) {
-        return ResponseEntity.ok(coursesService.setMemberAttendance(signUpId, request.attended()));
-    }
-
     @GetMapping("/available")
     public ResponseEntity<List<Course>> getAvailableCourses() {
         return ResponseEntity.ok(coursesService.getAvailableCourses());
@@ -94,11 +88,6 @@ public class CoursesController {
     @GetMapping("/member/{memberId}")
     public ResponseEntity<List<Course>> getCoursesForMember(@PathVariable Long memberId) {
         return ResponseEntity.ok(coursesService.getCoursesForMember(memberId));
-    }
-
-    @GetMapping("/member/{memberId}/attended")
-    public ResponseEntity<List<Course>> getPastAttendedCoursesForMember(@PathVariable Long memberId) {
-        return ResponseEntity.ok(coursesService.getPastAttendedCoursesForMember(memberId));
     }
 
     @GetMapping("/sort/name")
@@ -179,5 +168,4 @@ public class CoursesController {
     }
 
     public record SignUpRequest(Long memberId) {}
-    public record AttendanceRequest(Boolean attended) {}
 }

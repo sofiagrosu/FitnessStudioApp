@@ -89,18 +89,6 @@ public class CoursesService {
         coursesRepository.save(course);
     }
 
-    public String setMemberAttendance(Long signUpId, boolean attended) {
-        if (signUpId == null) throw new ValidationException("Sign-up id is required");
-
-        SignUp signUp = signUpsRepository.findById(signUpId)
-                .orElseThrow(() -> new NotFoundException("Sign-up not found"));
-
-        signUp.setAttended(attended);
-        signUpsRepository.save(signUp);
-
-        return "Attendance updated successfully";
-    }
-
     public String createSignUp(Long memberId, Long courseId) {
         Member member = memberService.getMemberById(memberId);
         Course course = getCourseById(courseId);
@@ -117,7 +105,7 @@ public class CoursesService {
         int maxCapacity = safeInt(course.getMaxCapacity());
 
         if (currentOccupancy < maxCapacity) {
-            SignUp signUp = new SignUp(course, member, LocalDateTime.now(), false);
+            SignUp signUp = new SignUp(course, member, LocalDateTime.now());
             signUpsRepository.save(signUp);
 
             course.setCurrentOccupancy(currentOccupancy + 1);
@@ -130,7 +118,7 @@ public class CoursesService {
             throw new ConflictException("Course and waitlist are both full");
         }
 
-        SignUp signUp = new SignUp(course, member, LocalDateTime.now(), false);
+        SignUp signUp = new SignUp(course, member, LocalDateTime.now());
         signUpsRepository.save(signUp);
 
         WaitlistEntry waitlistEntry = new WaitlistEntry(
@@ -225,24 +213,6 @@ public class CoursesService {
                 .map(SignUp::getCourse)
                 .distinct()
                 .toList();
-    }
-
-    public List<Course> getPastAttendedCoursesForMember(Long memberId) {
-        validateMemberExists(memberId);
-
-        return signUpsRepository.findByMember_Id(memberId).stream()
-                .filter(s -> Boolean.TRUE.equals(s.getAttended()))
-                .map(SignUp::getCourse)
-                .distinct()
-                .toList();
-    }
-
-    public long countAccumulatedAttendanceForMember(Long memberId) {
-        validateMemberExists(memberId);
-
-        return signUpsRepository.findByMember_Id(memberId).stream()
-                .filter(s -> Boolean.TRUE.equals(s.getAttended()))
-                .count();
     }
 
     public List<Course> getAvailableCoursesByLocation(Long locationId) {
