@@ -151,6 +151,11 @@ function AdminDashboard() {
     setError("");
     setSuccess("");
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userForm.email)) {
+      setError("Invalid email format.");
+      return;
+    }
+
     const role = tab === "trainers" ? "TRAINER" : "RECEPTIONIST";
 
     try {
@@ -190,6 +195,11 @@ function AdminDashboard() {
 
     setError("");
     setSuccess("");
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userForm.email)) {
+      setError("Invalid email format.");
+      return;
+    }
 
     try {
       if (tab === "trainers") {
