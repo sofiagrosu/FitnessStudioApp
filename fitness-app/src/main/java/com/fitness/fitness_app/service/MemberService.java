@@ -29,7 +29,6 @@ public class MemberService {
             member.setQrCode(generateUniqueQrCode());
         }
 
-        member.setActive(true);
         return membersRepository.save(member);
     }
 
@@ -51,6 +50,8 @@ public class MemberService {
         if (updatedMember.getEmail() == null || updatedMember.getEmail().isBlank()) {
             throw new ValidationException("Email is required");
         }
+
+        validateEmail(updatedMember.getEmail());
 
         if (!updatedMember.getEmail().equalsIgnoreCase(existingMember.getEmail())) {
             if (membersRepository.findByEmailIgnoreCase(updatedMember.getEmail()) != null) {
@@ -137,7 +138,19 @@ public class MemberService {
             throw new ValidationException("Email is required");
         }
 
+        validateEmail(member.getEmail());
+
+        if (member.getPassword() == null || member.getPassword().isBlank()) {
+            throw new ValidationException("Password is required");
+        }
+
         validatePhone(member.getPhone());
+    }
+
+    private void validateEmail(String email) {
+        if (email != null && !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            throw new ValidationException("Invalid email format");
+        }
     }
 
     private void validatePhone(String phone) {

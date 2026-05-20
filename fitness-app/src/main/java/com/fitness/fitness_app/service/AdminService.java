@@ -69,6 +69,10 @@ public class AdminService {
             throw new ForbiddenException("Admins cannot be deactivated through this endpoint");
         }
 
+        if (user.getRole() == Role.MEMBER) {
+            throw new ForbiddenException("Members cannot be deactivated through this endpoint");
+        }
+
         user.setActive(false);
         userRepo.save(user);
     }
@@ -119,6 +123,8 @@ public class AdminService {
 
         if (updatedTrainer.getEmail() == null || updatedTrainer.getEmail().isBlank())
             throw new ValidationException("Email is required");
+
+        validateEmail(updatedTrainer.getEmail());
 
         if (!updatedTrainer.getEmail().equalsIgnoreCase(existing.getEmail())) {
             if (userRepo.findByEmailIgnoreCase(updatedTrainer.getEmail()) != null)
@@ -173,6 +179,8 @@ public class AdminService {
         if (updatedReceptionist.getEmail() == null || updatedReceptionist.getEmail().isBlank())
             throw new ValidationException("Email is required");
 
+        validateEmail(updatedReceptionist.getEmail());
+
         if (!updatedReceptionist.getEmail().equalsIgnoreCase(existing.getEmail())) {
             if (userRepo.findByEmailIgnoreCase(updatedReceptionist.getEmail()) != null)
                 throw new ConflictException("Email already used by another user");
@@ -190,6 +198,12 @@ public class AdminService {
         }
 
         return userRepo.save(existing);
+    }
+
+    private void validateEmail(String email) {
+        if (email != null && !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            throw new ValidationException("Invalid email format");
+        }
     }
 
     private void validatePhone(String phone) {

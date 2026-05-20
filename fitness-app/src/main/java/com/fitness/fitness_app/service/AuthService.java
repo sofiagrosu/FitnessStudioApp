@@ -45,14 +45,6 @@ public class AuthService {
             throw new ValidationException("Member data is required");
         }
 
-        if (member.getEmail() == null || member.getEmail().isBlank()) {
-            throw new ValidationException("Email is required");
-        }
-
-        if (member.getPassword() == null || member.getPassword().isBlank()) {
-            throw new ValidationException("Password is required");
-        }
-
         if (userRepo.findByEmailIgnoreCase(member.getEmail()) != null) {
             throw new ConflictException("Email already registered");
         }

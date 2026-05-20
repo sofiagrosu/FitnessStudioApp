@@ -13,7 +13,6 @@ public class Trainer extends User {
 
     public Trainer() {
         this.role=Role.TRAINER;
-        this.active=true;
     }
 
     public Trainer(String firstName,
@@ -27,7 +26,6 @@ public class Trainer extends User {
         this.password=password;
 
         this.role=Role.TRAINER;
-        this.active=true;
     }
 
     @JsonIgnore

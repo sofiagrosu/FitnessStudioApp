@@ -18,7 +18,6 @@ public class Member extends User {
 
     public Member(){
         this.role=Role.MEMBER;
-        this.active=true;
     }
 
     public Member(String firstName,
@@ -32,7 +31,6 @@ public class Member extends User {
         this.phone=phone;
 
         this.role=Role.MEMBER;
-        this.active=true;
     }
 
     @JsonIgnore

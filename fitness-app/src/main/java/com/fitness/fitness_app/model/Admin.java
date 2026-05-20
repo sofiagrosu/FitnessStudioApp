@@ -13,7 +13,6 @@ public class Admin extends User {
 
     public Admin() {
         this.role=Role.ADMIN;
-        this.active=true;
     }
 
     public Admin(String email,String password,
@@ -25,7 +24,6 @@ public class Admin extends User {
         this.lastName=lastName;
 
         this.role=Role.ADMIN;
-        this.active=true;
     }
 
     @JsonIgnore

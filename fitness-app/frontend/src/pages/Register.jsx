@@ -33,8 +33,8 @@ function Register() {
     try {
       await registerUser(form);
       navigate("/dashboard");
-    } catch {
-      setError("Registration failed. Please try again.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     }
   }
 

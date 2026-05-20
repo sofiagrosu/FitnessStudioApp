@@ -13,7 +13,6 @@ public class Receptionist extends User {
 
     public Receptionist() {
         this.role = Role.RECEPTIONIST;
-        this.active = true;
     }
 
     public Receptionist(String firstName,
@@ -27,7 +26,6 @@ public class Receptionist extends User {
         this.password = password;
 
         this.role = Role.RECEPTIONIST;
-        this.active = true;
     }
 
     @JsonIgnore
