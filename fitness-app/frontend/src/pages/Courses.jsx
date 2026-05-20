@@ -1,60 +1,33 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
-import { getCourses, joinCourse, getMemberCourses, getCourseSignups, getCourseWaitlist, leaveCourse } from "../services/courseService";
+import {
+  getCourses,
+  joinCourse,
+  getMemberCourses,
+  getCourseSignups,
+  getCourseWaitlist,
+  leaveCourse,
+} from "../services/courseService";
 import { getCurrentUser } from "../services/authService";
 import { Clock, MapPin, User, CalendarDays } from "lucide-react";
 
-const demoCourses = [
-  {
-    id: 1,
-    name: "Strength Training",
-    type: "STRENGTH",
-    trainerName: "Alex Pop",
-    trainerInfo: "Strength coach · 6 years experience",
-    dayOfWeek: "MONDAY",
-    startTime: "18:00",
-    duration: 60,
-    locationName: "Central Gym",
-    currentOccupancy: 12,
-    maxCapacity: 20,
-    image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: 2,
-    name: "Yoga Flow",
-    type: "YOGA",
-    trainerName: "Ioana Radu",
-    trainerInfo: "Yoga instructor · mobility & recovery",
-    dayOfWeek: "TUESDAY",
-    startTime: "09:00",
-    duration: 45,
-    locationName: "Zorilor Gym",
-    currentOccupancy: 8,
-    maxCapacity: 15,
-    image: "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: 3,
-    name: "HIIT Blast",
-    type: "HIIT",
-    trainerName: "Andrei M.",
-    trainerInfo: "Conditioning trainer · high intensity",
-    dayOfWeek: "FRIDAY",
-    startTime: "19:00",
-    duration: 50,
-    locationName: "Mărăști Gym",
-    currentOccupancy: 6,
-    maxCapacity: 20,
-    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1200&auto=format&fit=crop",
-  },
-];
+const courseImages = {
+  YOGA:
+    "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?q=80&w=1200&auto=format&fit=crop",
+  SPINNING:
+    "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?q=80&w=1200&auto=format&fit=crop",
+  ZUMBA:
+    "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1200&auto=format&fit=crop",
+  PILATES:
+    "https://images.unsplash.com/photo-1518310383802-640c2de311b2?q=80&w=1200&auto=format&fit=crop",
+};
 
 function Courses() {
-  const [courses, setCourses]             = useState([]);
-  const [enrolledIds, setEnrolledIds]     = useState(new Set());
-  const [message, setMessage]             = useState("");
-  const [loadingId, setLoadingId]         = useState(null); // courseId being processed
+  const [courses, setCourses] = useState([]);
+  const [enrolledIds, setEnrolledIds] = useState(new Set());
+  const [message, setMessage] = useState("");
+  const [loadingId, setLoadingId] = useState(null);
 
   const user = getCurrentUser();
   const isMember = user?.role === "MEMBER";
@@ -65,33 +38,26 @@ function Courses() {
 
   async function loadAll() {
     await loadCourses();
-    if (isMember) await loadEnrolled();
+
+    if (isMember && user?.id) {
+      await loadEnrolled();
+    }
   }
 
   async function loadCourses() {
     try {
       const res = await getCourses();
-
-      const normalized = res.data.map((course, index) => ({
-        ...demoCourses[index % demoCourses.length],
-        ...course,
-        trainerName: course.trainerName || demoCourses[index % demoCourses.length].trainerName,
-        trainerInfo: demoCourses[index % demoCourses.length].trainerInfo,
-        locationName: course.locationName || demoCourses[index % demoCourses.length].locationName,
-        image: demoCourses[index % demoCourses.length].image,
-      }));
-
-      setCourses(normalized.length ? normalized : demoCourses);
+      setCourses(res.data || []);
     } catch {
-      setCourses(demoCourses);
-      setMessage("Backend unavailable. Showing demo classes.");
+      setCourses([]);
+      setMessage("Could not load classes from backend.");
     }
   }
 
   async function loadEnrolled() {
     try {
       const res = await getMemberCourses(user.id);
-      const ids = new Set(res.data.map((c) => c.id));
+      const ids = new Set(res.data.map((course) => course.id));
       setEnrolledIds(ids);
     } catch {
       setEnrolledIds(new Set());
@@ -99,23 +65,26 @@ function Courses() {
   }
 
   async function handleJoin(courseId) {
-    if (!isMember) {
+    if (!isMember || !user?.id) {
       setMessage("You must be logged in as a member to join a class.");
       return;
     }
 
     setLoadingId(courseId);
     setMessage("");
+
     try {
       await joinCourse(courseId, user.id);
       setMessage("Successfully joined class!");
-      // Reload both courses (counter update) and enrolled list
       await loadCourses();
       await loadEnrolled();
     } catch (err) {
       const status = err?.response?.status;
+
       if (status === 400) {
-        setMessage("You need an active paid subscription to join a class. Go to Memberships to get one.");
+        setMessage(
+          "You need an active paid subscription to join a class. Go to Memberships to get one."
+        );
       } else if (status === 409) {
         setMessage("You are already signed up for this class.");
       } else {
@@ -127,19 +96,21 @@ function Courses() {
   }
 
   async function handleLeave(courseId) {
-    if (!user) return;
+    if (!user?.id) return;
 
     setLoadingId(courseId);
     setMessage("");
+
     try {
-      // 1. Look in enrolled signups first
       const signupsRes = await getCourseSignups(courseId);
       let mySignUp = signupsRes.data.find((s) => s.member?.id === user.id);
 
-      // 2. If not enrolled, look in waitlist (waitlisted members also have a SignUp)
       if (!mySignUp) {
         const waitlistRes = await getCourseWaitlist(courseId);
-        const myWaitlistEntry = waitlistRes.data.find((e) => e.member?.id === user.id);
+        const myWaitlistEntry = waitlistRes.data.find(
+          (entry) => entry.member?.id === user.id
+        );
+
         if (myWaitlistEntry?.signUp) {
           mySignUp = myWaitlistEntry.signUp;
         }
@@ -152,7 +123,6 @@ function Courses() {
 
       await leaveCourse(mySignUp.id, user.id);
       setMessage("Successfully left the class.");
-      // Reload both courses (counter update) and enrolled list
       await loadCourses();
       await loadEnrolled();
     } catch {
@@ -162,45 +132,124 @@ function Courses() {
     }
   }
 
+  function renderCourses() {
+    return (
+      <div className="grid-2">
+        {courses.map((course) => {
+          const type = course.type || "YOGA";
+          const image = courseImages[type] || courseImages.YOGA;
+
+          const currentOccupancy = course.currentOccupancy || 0;
+          const maxCapacity = course.maxCapacity || 1;
+          const percent = Math.round((currentOccupancy / maxCapacity) * 100);
+
+          const isEnrolled = enrolledIds.has(course.id);
+          const isLoading = loadingId === course.id;
+          const isFull = percent >= 100;
+
+          return (
+            <div className="course-card card" key={course.id}>
+              <div className="course-image">
+                <img src={image} alt={course.name || type} />
+              </div>
+
+              <div className="course-content">
+                <div className="course-top">
+                  <div>
+                    <h3>{course.name || type}</h3>
+                    <p>{type}</p>
+                  </div>
+
+                  <span className="tag">
+                    {isEnrolled ? "Enrolled" : isFull ? "Full" : "Available"}
+                  </span>
+                </div>
+
+                <div className="course-info">
+                  <span>
+                    <User size={15} /> {course.trainerName || "Trainer"}
+                  </span>
+
+                  {course.trainerInfo && <span>{course.trainerInfo}</span>}
+
+                  <span>
+                    <CalendarDays size={15} /> {course.dayOfWeek || "Weekly"}
+                  </span>
+
+                  <span>
+                    <Clock size={15} /> {course.startTime || "--:--"} ·{" "}
+                    {course.duration || 60} min
+                  </span>
+
+                  <span>
+                    <MapPin size={15} />{" "}
+                    {course.locationName || "Fitness location"}
+                  </span>
+                </div>
+
+                <div className="occupancy">
+                  <div className="occupancy-row">
+                    <span>
+                      {currentOccupancy}/{maxCapacity} spots
+                    </span>
+                    <span>{Math.min(percent, 100)}% full</span>
+                  </div>
+
+                  <div className="progress">
+                    <div style={{ width: `${Math.min(percent, 100)}%` }} />
+                  </div>
+                </div>
+
+                {isMember && (
+                  isEnrolled ? (
+                    <button
+                      className="primary-btn course-btn"
+                      onClick={() => handleLeave(course.id)}
+                      disabled={isLoading}
+                      style={{ background: "#e74c3c" }}
+                    >
+                      {isLoading ? "Processing..." : "Leave class"}
+                    </button>
+                  ) : (
+                    <button
+                      className="primary-btn course-btn"
+                      onClick={() => handleJoin(course.id)}
+                      disabled={isLoading}
+                    >
+                      {isLoading
+                        ? "Processing..."
+                        : isFull
+                        ? "Join waitlist"
+                        : "Join class"}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <>
         <Navbar />
+
         <main style={{ padding: "2rem" }}>
           <h1 className="section-title">Classes</h1>
-          <p className="section-subtitle">Browse classes, trainers, schedule and occupancy.</p>
-          <div className="grid-2">
-            {courses.map((course) => {
-              const percent = Math.round(((course.currentOccupancy || 0) / course.maxCapacity) * 100);
-              return (
-                <div className="course-card card" key={course.id}>
-                  <div className="course-image">
-                    <img src={course.image} alt={course.name} />
-                  </div>
-                  <div className="course-content">
-                    <div className="course-top">
-                      <div><h3>{course.name}</h3><p>{course.type}</p></div>
-                      <span className="tag">{percent >= 100 ? "Full" : "Available"}</span>
-                    </div>
-                    <div className="course-info">
-                      <span><User size={15} /> {course.trainerName}</span>
-                      <span>{course.trainerInfo}</span>
-                      <span><CalendarDays size={15} /> {course.dayOfWeek}</span>
-                      <span><Clock size={15} /> {course.startTime} · {course.duration} min</span>
-                      <span><MapPin size={15} /> {course.locationName}</span>
-                    </div>
-                    <div className="occupancy">
-                      <div className="occupancy-row">
-                        <span>{course.currentOccupancy}/{course.maxCapacity} spots</span>
-                        <span>{percent}% full</span>
-                      </div>
-                      <div className="progress"><div style={{ width: `${Math.min(percent, 100)}%` }} /></div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <p className="section-subtitle">
+            Browse Yoga, Spinning, Zumba and Pilates classes.
+          </p>
+
+          {message && <div className="info-box">{message}</div>}
+
+          {courses.length > 0 ? (
+            renderCourses()
+          ) : (
+            <div className="info-box">No classes available yet.</div>
+          )}
         </main>
       </>
     );
@@ -213,80 +262,16 @@ function Courses() {
       <main>
         <h1 className="section-title">Classes</h1>
         <p className="section-subtitle">
-          Browse classes, trainers, schedule and occupancy.
+          Browse Yoga, Spinning, Zumba and Pilates classes.
         </p>
 
         {message && <div className="info-box">{message}</div>}
 
-        <div className="grid-2">
-          {courses.map((course) => {
-            const percent = Math.round(
-              ((course.currentOccupancy || 0) / course.maxCapacity) * 100
-            );
-            const isEnrolled = enrolledIds.has(course.id);
-            const isLoading  = loadingId === course.id;
-            const isFull     = percent >= 100;
-
-            return (
-              <div className="course-card card" key={course.id}>
-                <div className="course-image">
-                  <img src={course.image} alt={course.name} />
-                </div>
-
-                <div className="course-content">
-                  <div className="course-top">
-                    <div>
-                      <h3>{course.name}</h3>
-                      <p>{course.type}</p>
-                    </div>
-                    <span className="tag">
-                      {isEnrolled ? "Enrolled" : isFull ? "Full" : "Available"}
-                    </span>
-                  </div>
-
-                  <div className="course-info">
-                    <span><User size={15} /> {course.trainerName}</span>
-                    <span>{course.trainerInfo}</span>
-                    <span><CalendarDays size={15} /> {course.dayOfWeek}</span>
-                    <span><Clock size={15} /> {course.startTime} · {course.duration} min</span>
-                    <span><MapPin size={15} /> {course.locationName}</span>
-                  </div>
-
-                  <div className="occupancy">
-                    <div className="occupancy-row">
-                      <span>{course.currentOccupancy}/{course.maxCapacity} spots</span>
-                      <span>{percent}% full</span>
-                    </div>
-                    <div className="progress">
-                      <div style={{ width: `${Math.min(percent, 100)}%` }} />
-                    </div>
-                  </div>
-
-                  {isMember && (
-                    isEnrolled ? (
-                      <button
-                        className="primary-btn course-btn"
-                        onClick={() => handleLeave(course.id)}
-                        disabled={isLoading}
-                        style={{ background: "#e74c3c" }}
-                      >
-                        {isLoading ? "Processing..." : "Leave class"}
-                      </button>
-                    ) : (
-                      <button
-                        className="primary-btn course-btn"
-                        onClick={() => handleJoin(course.id)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Processing..." : isFull ? "Join waitlist" : "Join class"}
-                      </button>
-                    )
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {courses.length > 0 ? (
+          renderCourses()
+        ) : (
+          <div className="info-box">No classes available yet.</div>
+        )}
       </main>
     </div>
   );
